@@ -24,7 +24,7 @@
     "monaco-editor": "^0.33.0",
     "ninja-keys": "^1.1.12",
     "postcss": "^8.4.5",
-    "postcss-load-config": "^3.1.1",
+    "postcss-load-config": "^4.0.1",
     "svelte": "^3.49.0",
     "svelte-check": "^2.8.0",
     "svelte-fa": "^2.4.0",

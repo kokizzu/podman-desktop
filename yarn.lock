@@ -2130,7 +2130,7 @@
     "@docusaurus/theme-search-algolia" "3.1.1"
     "@docusaurus/types" "3.1.1"
 
-"@docusaurus/react-loadable@5.5.2", "react-loadable@npm:@docusaurus/react-loadable@5.5.2":
+"@docusaurus/react-loadable@5.5.2":
   version "5.5.2"
   resolved "https://registry.yarnpkg.com/@docusaurus/react-loadable/-/react-loadable-5.5.2.tgz#81aae0db81ecafbdaee3651f12804580868fa6ce"
   integrity sha512-A3dYjdBGuy0IGT+wyLIGIKLRE+sAk1iNk0f1HjNDysO7u8lhL4N3VEm+FAubmJbAztn94F7MxBTPmnixbiyFdQ==
@@ -7412,10 +7412,10 @@ electron-util@^0.18.1:
     electron-is-dev "^3.0.1"
     new-github-issue-url "^1.0.0"
 
-electron@29.1.0:
-  version "29.1.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-29.1.0.tgz#37f0e4915226db3c87bc54b187795272bf61fc39"
-  integrity sha512-giJVIm0sWVp+8V1GXrKqKTb+h7no0P3ooYqEd34AD9wMJzGnAeL+usj+R0155/0pdvvP1mgydnA7lcaFA2M9lw==
+electron@30.0.1:
+  version "30.0.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-30.0.1.tgz#2caf0eb7ed591b9b9842b522421bcae3aa8293d6"
+  integrity sha512-iwxkI/n2wBd29NH7TH0ZY8aWGzCoKpzJz+D10u7aGSJi1TV6d4MSM3rWyKvT/UkAHkTKOEgYfUyCa2vWQm8L0g==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^20.9.0"
@@ -13416,6 +13416,14 @@ react-loadable-ssr-addon-v5-slorber@^1.0.1:
   integrity sha512-lq3Lyw1lGku8zUEJPDxsNm1AfYHBrO9Y1+olAYwpUJ2IGFBskM0DMKok97A6LWUpHm+o7IvQBOWu9MLenp9Z+A==
   dependencies:
     "@babel/runtime" "^7.10.3"
+
+"react-loadable@npm:@docusaurus/react-loadable@5.5.2":
+  version "5.5.2"
+  resolved "https://registry.yarnpkg.com/@docusaurus/react-loadable/-/react-loadable-5.5.2.tgz#81aae0db81ecafbdaee3651f12804580868fa6ce"
+  integrity sha512-A3dYjdBGuy0IGT+wyLIGIKLRE+sAk1iNk0f1HjNDysO7u8lhL4N3VEm+FAubmJbAztn94F7MxBTPmnixbiyFdQ==
+  dependencies:
+    "@types/react" "*"
+    prop-types "^15.6.2"
 
 react-player@^2.15.1:
   version "2.15.1"

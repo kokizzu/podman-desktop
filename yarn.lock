@@ -2130,7 +2130,7 @@
     "@docusaurus/theme-search-algolia" "3.1.1"
     "@docusaurus/types" "3.1.1"
 
-"@docusaurus/react-loadable@5.5.2", "react-loadable@npm:@docusaurus/react-loadable@5.5.2":
+"@docusaurus/react-loadable@5.5.2":
   version "5.5.2"
   resolved "https://registry.yarnpkg.com/@docusaurus/react-loadable/-/react-loadable-5.5.2.tgz#81aae0db81ecafbdaee3651f12804580868fa6ce"
   integrity sha512-A3dYjdBGuy0IGT+wyLIGIKLRE+sAk1iNk0f1HjNDysO7u8lhL4N3VEm+FAubmJbAztn94F7MxBTPmnixbiyFdQ==
@@ -3273,16 +3273,16 @@
     p-map "^4.0.0"
     webpack-sources "^3.2.2"
 
-"@sveltejs/package@^2.2.6":
-  version "2.2.7"
-  resolved "https://registry.yarnpkg.com/@sveltejs/package/-/package-2.2.7.tgz#5c2c247d8807f6d683dcd9d51a609860f35cb31b"
-  integrity sha512-/vvmrQO2mMvROdM/iGRHtRn+ValnK9xzB50pqRcX0IvoeVoTq7uhYf+KifrZTluBA+km6AX/WXRXajrgrgbmvw==
+"@sveltejs/package@^2.3.5":
+  version "2.3.5"
+  resolved "https://registry.yarnpkg.com/@sveltejs/package/-/package-2.3.5.tgz#97311f4ef5f26859e496c22e64c7fa4e233d231a"
+  integrity sha512-fxWSG+pJHxWwcKltG+JoQ+P1CPO7NHVuZD1Gchi/1mNN6C60yD/voHeeXlqr0HHGkvIrpAjRIHLjsavI77Qsiw==
   dependencies:
-    chokidar "^3.6.0"
+    chokidar "^4.0.0"
     kleur "^4.1.5"
     sade "^1.8.1"
     semver "^7.5.4"
-    svelte2tsx "~0.7.0"
+    svelte2tsx "~0.7.16"
 
 "@sveltejs/vite-plugin-svelte-inspector@^2.0.0":
   version "2.0.0"
@@ -5640,6 +5640,13 @@ chokidar@^3.4.1, chokidar@^3.4.2, chokidar@^3.5.3, chokidar@^3.6.0:
   optionalDependencies:
     fsevents "~2.3.2"
 
+chokidar@^4.0.0:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-4.0.1.tgz#4a6dff66798fb0f72a94f616abbd7e1a19f31d41"
+  integrity sha512-n8enUVCED/KVRQlab1hr3MVpcVMvxtZjmEa956u+4YijlmQED223XMSYj2tLuKvr4jcCTzNNMpQDUer72MMmzA==
+  dependencies:
+    readdirp "^4.0.1"
+
 chownr@^1.1.1:
   version "1.1.4"
   resolved "https://registry.npmjs.org/chownr/-/chownr-1.1.4.tgz"
@@ -6168,12 +6175,12 @@ cosmiconfig@^8.2.0, cosmiconfig@^8.3.6:
     path-type "^4.0.0"
 
 cpu-features@~0.0.4:
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/cpu-features/-/cpu-features-0.0.9.tgz#5226b92f0f1c63122b0a3eb84cb8335a4de499fc"
-  integrity sha512-AKjgn2rP2yJyfbepsmLfiYcmtNn/2eUvocUyM/09yB0YDiz39HteK/5/T4Onf0pmdYDMgkBoGvRLvEguzyL7wQ==
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/cpu-features/-/cpu-features-0.0.10.tgz#9aae536db2710c7254d7ed67cb3cbc7d29ad79c5"
+  integrity sha512-9IkYqtX3YHPCzoVg1Py+o9057a3i0fp7S530UWokCSaFVTc7CwXPRiOjRjBQQ18ZCNafx78YfnG+HALxtVmOGA==
   dependencies:
     buildcheck "~0.0.6"
-    nan "^2.17.0"
+    nan "^2.19.0"
 
 crc@^3.8.0:
   version "3.8.0"
@@ -11899,15 +11906,10 @@ mz@^2.7.0:
     object-assign "^4.0.1"
     thenify-all "^1.0.0"
 
-nan@^2.16.0:
-  version "2.18.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.18.0.tgz#26a6faae7ffbeb293a39660e88a76b82e30b7554"
-  integrity sha512-W7tfG7vMOGtD30sHoZSSc/JVYiyDPEyQVso/Zz+/uQd0B0L46gtC+pHha5FFMRpil6fm/AoEcRWyOVi4+E/f8w==
-
-nan@^2.17.0:
-  version "2.17.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.17.0.tgz#c0150a2368a182f033e9aa5195ec76ea41a199cb"
-  integrity sha512-2ZTgtl0nJsO0KQCjEpxcIr5D+Yv90plTitZt9JBfQvVJDS5seMl3FOvsh3+9CoYWXf/1l5OaZzzF6nDm4cagaQ==
+nan@^2.16.0, nan@^2.19.0:
+  version "2.20.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.20.0.tgz#08c5ea813dd54ed16e5bd6505bf42af4f7838ca3"
+  integrity sha512-bk3gXBZDGILuuo/6sKtr0DQmSThYHLtNCdSdXk9YkxD/jK6X2vmCyyXBBxyqZ4XcnzTyYEAThfX3DCEnLf6igw==
 
 nanoid@^3.3.7:
   version "3.3.7"
@@ -13417,6 +13419,14 @@ react-loadable-ssr-addon-v5-slorber@^1.0.1:
   dependencies:
     "@babel/runtime" "^7.10.3"
 
+"react-loadable@npm:@docusaurus/react-loadable@5.5.2":
+  version "5.5.2"
+  resolved "https://registry.yarnpkg.com/@docusaurus/react-loadable/-/react-loadable-5.5.2.tgz#81aae0db81ecafbdaee3651f12804580868fa6ce"
+  integrity sha512-A3dYjdBGuy0IGT+wyLIGIKLRE+sAk1iNk0f1HjNDysO7u8lhL4N3VEm+FAubmJbAztn94F7MxBTPmnixbiyFdQ==
+  dependencies:
+    "@types/react" "*"
+    prop-types "^15.6.2"
+
 react-player@^2.15.1:
   version "2.15.1"
   resolved "https://registry.yarnpkg.com/react-player/-/react-player-2.15.1.tgz#a5905126a6c5ba2667391a0d72da9f3a1ab57d54"
@@ -13538,6 +13548,11 @@ readable-stream@~1.0.31:
     inherits "~2.0.1"
     isarray "0.0.1"
     string_decoder "~0.10.x"
+
+readdirp@^4.0.1:
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-4.0.2.tgz#388fccb8b75665da3abffe2d8f8ed59fe74c230a"
+  integrity sha512-yDMz9g+VaZkqBYS/ozoBJwaBhTbZo3UNYQHNRw1D3UFQB8oHB4uS/tAODO+ZLjGWmUbKnIlOWO+aaIiAxrUWHA==
 
 readdirp@~3.6.0:
   version "3.6.0"
@@ -15029,10 +15044,10 @@ svelte-steps@2.4.1:
   resolved "https://registry.yarnpkg.com/svelte-steps/-/svelte-steps-2.4.1.tgz#64e055735818e81454e1ca5be8b7b9fe23a8b239"
   integrity sha512-2Xq2lLcGJf3PaEY46f1w5s+/O+tLl4U2V+Z+sCeoUm/kEPFXeZP/aFr2JVKwdzSlXCT+raz75xqXtnZrPWJ0zA==
 
-svelte2tsx@~0.7.0:
-  version "0.7.2"
-  resolved "https://registry.yarnpkg.com/svelte2tsx/-/svelte2tsx-0.7.2.tgz#8ed8ce17097c1b04f69689cf0f37ead1acb8fc07"
-  integrity sha512-gtKJPzGt8OARDILafwyTeM2Xh/t5nCN+/Kjr2SlfVDqct5G4t/e8jaY6e0cxjLOyiVYJTGQrjmghrMyH6jAHnQ==
+svelte2tsx@~0.7.16:
+  version "0.7.21"
+  resolved "https://registry.yarnpkg.com/svelte2tsx/-/svelte2tsx-0.7.21.tgz#a96c730f90180b2446e418e661fde168c875e105"
+  integrity sha512-cdYR5gYBK0Ys3/jzGu9yfW9oxGLtLAnxcKtS7oJy2pjLhLLYSZcWeeeuaY9SMULwlqMZ1HfngGH3n5VdquRC3Q==
   dependencies:
     dedent-js "^1.0.1"
     pascal-case "^3.1.1"

@@ -1486,7 +1486,7 @@ release we received pull requests from the following people:</p>
 <li>chore: change the order of elements on the dashboard page by @gastoner in <a href="https://github.com/containers/podman-desktop/pull/8381" target="_blank" rel="noopener noreferrer">#8381</a></li>
 <li>fix: next version check by @SoniaSandler in <a href="https://github.com/containers/podman-desktop/pull/9595" target="_blank" rel="noopener noreferrer">#9595</a></li>
 </ul>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="documentation-">documentation 📖<a href="https://podman-desktop.io/blog/podman-desktop-release-1.14#documentation-" class="hash-link" aria-label="Direct link to documentation ��📖" title="Direct link to documentation 📖">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="documentation-">documentation 📖<a href="https://podman-desktop.io/blog/podman-desktop-release-1.14#documentation-" class="hash-link" aria-label="Direct link to documentation 📖" title="Direct link to documentation 📖">​</a></h3>
 <ul>
 <li>docs: add kind video by @cdrage in <a href="https://github.com/containers/podman-desktop/pull/9444" target="_blank" rel="noopener noreferrer">#9444</a></li>
 <li>docs: add minikube video by @cdrage in <a href="https://github.com/containers/podman-desktop/pull/9391" target="_blank" rel="noopener noreferrer">#9391</a></li>

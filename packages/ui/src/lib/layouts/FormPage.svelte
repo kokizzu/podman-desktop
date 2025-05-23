@@ -8,7 +8,6 @@ interface Props {
   inProgress?: boolean;
   breadcrumbLeftPart?: string;
   breadcrumbRightPart?: string;
-  breadcrumbTitle?: string;
   onclose?: () => void;
   onbreadcrumbClick?: () => void;
   icon?: Snippet;
@@ -21,12 +20,11 @@ const {
   inProgress = false,
   breadcrumbLeftPart = undefined,
   breadcrumbRightPart = undefined,
-  breadcrumbTitle = '',
   onclose = (): void => {},
   onbreadcrumbClick = (): void => {},
-  icon,
-  actions,
-  content,
+  icon: thisIcon,
+  actions: thisActions,
+  content: thisContent,
 }: Props = $props();
 </script>
 
@@ -34,17 +32,18 @@ const {
   title={title}
   breadcrumbLeftPart={breadcrumbLeftPart}
   breadcrumbRightPart={breadcrumbRightPart}
-  breadcrumbTitle={breadcrumbTitle}
   inProgress={inProgress}
   onclose={onclose}
   onbreadcrumbClick={onbreadcrumbClick}>
-  <svelte:fragment slot="icon">
-    {@render icon?.()}
-  </svelte:fragment>
-  <svelte:fragment slot="actions">
-    {@render actions?.()}
-  </svelte:fragment>
-  <div slot="content" class="flex w-full h-full overflow-auto">
-    {@render content?.()}
-  </div>
+  {#snippet icon()}
+    {@render thisIcon?.()}
+  {/snippet}
+  {#snippet actions()}
+    {@render thisActions?.()}
+  {/snippet}
+  {#snippet content()}
+    <div class="flex w-full h-full overflow-auto">
+      {@render thisContent?.()}
+    </div>
+  {/snippet}
 </Page>

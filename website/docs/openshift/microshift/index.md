@@ -45,3 +45,4 @@ With Podman Desktop, you can use the MicroShift in a Container (MINC) extension 
 #### Additional resources
 
 - [minc-extension repository](https://github.com/minc-org/minc-extension)
+- [MINC blog](/blog/iterate-quickly-inner-loop-with-a-kubernetes-cluster)

@@ -53,17 +53,37 @@ export default function Home(): JSX.Element {
               <p className="dark:text-gray-700">Connect with the community through our official channels:</p>
               <ul className="list-disc list-inside space-y-2 dark:text-gray-700">
                 <li>
-                  <a href="https://discord.com/invite/x5GzFF6QH4">Discord</a>: Join our Discord.
+                  <a href="https://discord.com/invite/x5GzFF6QH4" target="_blank" rel="noopener noreferrer">
+                    Join us on our Discord
+                  </a>
                 </li>
                 <li>
-                  <a href="https://github.com/podman-desktop/podman-desktop/discussions">Github Discussions</a>:
-                  Participate in discussions.
+                  <a
+                    href="https://github.com/podman-desktop/podman-desktop/discussions"
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    Participate on GitHub Discussions
+                  </a>
                 </li>
                 <li>
-                  <a href="https://bsky.app/profile/podman-desktop.io">Bluesky</a>: Follow us on Bluesky.
+                  <a href="https://fosstodon.org/@podmandesktop" target="_blank" rel="noopener noreferrer">
+                    Follow us on Mastodon
+                  </a>
                 </li>
                 <li>
-                  <a href="https://x.com/Podman_io">X</a>: Follow us on X.
+                  <a href="https://bsky.app/profile/podman-desktop.io" target="_blank" rel="noopener noreferrer">
+                    Follow us on Bluesky
+                  </a>
+                </li>
+                <li>
+                  <a href="https://x.com/podmandesktop" target="_blank" rel="noopener noreferrer">
+                    Follow us on X
+                  </a>
+                </li>
+                <li>
+                  <a href="https://www.linkedin.com/company/podman-desktop" target="_blank" rel="noopener noreferrer">
+                    Follow us on LinkedIn
+                  </a>
                 </li>
               </ul>
             </div>

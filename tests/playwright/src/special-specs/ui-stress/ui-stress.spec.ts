@@ -44,6 +44,8 @@ test.describe.serial('Verification of UI handling lots of objects', { tag: ['@ui
       await playExpect
         .poll(async () => await images.waitForRowToExists(`localhost/my-image-${imgNum}`), { timeout: 0 })
         .toBeTruthy();
+      const imgRowLocator = await images.getRowByName(`localhost/my-image-${imgNum}`);
+      await imgRowLocator?.scrollIntoViewIfNeeded();
     }
   });
 
@@ -60,6 +62,8 @@ test.describe.serial('Verification of UI handling lots of objects', { tag: ['@ui
       await playExpect
         .poll(async () => await containers.waitForRowToExists(`my-container-${containerNum}`), { timeout: 0 })
         .toBeTruthy();
+      const containerRowLocator = await containers.getRowByName(`my-container-${containerNum}`);
+      await containerRowLocator?.scrollIntoViewIfNeeded();
     }
   });
 
@@ -72,6 +76,8 @@ test.describe.serial('Verification of UI handling lots of objects', { tag: ['@ui
     await playExpect.poll(async () => await pods.countRowsFromTable(), { timeout: 10_000 }).toBe(numberOfObjects);
     for (let podNum = 1; podNum <= numberOfObjects; podNum++) {
       await playExpect.poll(async () => await pods.waitForRowToExists(`my-pod-${podNum}`), { timeout: 0 }).toBeTruthy();
+      const podRowLocator = await pods.getRowByName(`my-pod-${podNum}`);
+      await podRowLocator?.scrollIntoViewIfNeeded();
     }
   });
 });

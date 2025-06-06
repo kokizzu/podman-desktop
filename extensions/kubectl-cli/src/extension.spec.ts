@@ -104,6 +104,8 @@ beforeEach(() => {
     getReleaseAssetURL: vi.fn().mockResolvedValue('dummy download url'),
     downloadReleaseAsset: downloadReleaseAssetMock,
   } as unknown as KubectlGitHubReleases);
+  KubectlExtension.vpState.version = undefined;
+  KubectlExtension.vpState.path = undefined;
 });
 
 afterEach(() => {

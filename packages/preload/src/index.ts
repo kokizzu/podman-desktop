@@ -537,6 +537,7 @@ export function initExposure(): void {
       engineId: string;
       containerId: string;
       callback: (name: string, data: string) => void;
+      cancellableTokenId?: number;
     }): Promise<void> => {
       onDataCallbacksLogsContainerId++;
       onDataCallbacksLogsContainer.set(onDataCallbacksLogsContainerId, logsParams.callback);
@@ -544,6 +545,7 @@ export function initExposure(): void {
         engineId: logsParams.engineId,
         containerId: logsParams.containerId,
         onDataId: onDataCallbacksLogsContainerId,
+        cancellableTokenId: logsParams.cancellableTokenId,
       });
     },
   );
@@ -1242,6 +1244,7 @@ export function initExposure(): void {
       eventCollect: (key: symbol, eventName: 'finish' | 'stream' | 'error', data: string) => void,
       cancellableTokenId?: number,
       buildargs?: { [key: string]: string },
+      taskId?: number,
     ): Promise<unknown> => {
       onDataCallbacksBuildImageId++;
       onDataCallbacksBuildImage.set(onDataCallbacksBuildImageId, eventCollect);
@@ -1256,6 +1259,7 @@ export function initExposure(): void {
         onDataCallbacksBuildImageId,
         cancellableTokenId,
         buildargs,
+        taskId,
       );
     },
   );

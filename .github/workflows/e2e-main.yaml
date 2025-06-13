@@ -58,10 +58,15 @@ on:
         - 'true'
         required: false
 
+permissions:
+  contents: read
+
 jobs:
   e2e-tests:
     name: Run All E2E tests
     runs-on: ubuntu-24.04
+    permissions:
+      checks: write # required for mikepenz/action-junit-report
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -105,10 +110,10 @@ jobs:
         run: |
           # allow unprivileged user namespace
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-      
+
       # Enables multi-architecture support for building multi-arch manifests
       - name: Install QEMU for Multi-Arch
-        run: | 
+        run: |
           sudo apt install -y qemu-user-static
 
       - name: Set cgroup_manager to 'cgroupfs' instead of systemd
@@ -149,7 +154,7 @@ jobs:
           pnpm ${{ env.NPM_TARGET }}
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@cf701569b05ccdd861a76b8607a66d76f6fd4857 # v5.5.1
+        uses: mikepenz/action-junit-report@65fe03598d8d251738592a497a9e8547a5c48eaa # v5.6.0
         if: always() # always run even if the previous step fails
         with:
           fail_on_failure: true
@@ -170,6 +175,8 @@ jobs:
   win-update-e2e-test:
     name: win update e2e tests - ${{ matrix.installation }}
     runs-on: windows-2022
+    permissions:
+      checks: write # required for mikepenz/action-junit-report
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 60
@@ -226,7 +233,7 @@ jobs:
           pnpm test:e2e:update:run
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@cf701569b05ccdd861a76b8607a66d76f6fd4857 # v5.5.1
+        uses: mikepenz/action-junit-report@65fe03598d8d251738592a497a9e8547a5c48eaa # v5.6.0
         if: always() # always run even if the previous step fails
         with:
           fail_on_failure: true
@@ -306,7 +313,7 @@ jobs:
           pnpm test:e2e:update:run
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@cf701569b05ccdd861a76b8607a66d76f6fd4857 # v5.5.1
+        uses: mikepenz/action-junit-report@65fe03598d8d251738592a497a9e8547a5c48eaa # v5.6.0
         if: always() # always run even if the previous step fails
         with:
           fail_on_failure: true

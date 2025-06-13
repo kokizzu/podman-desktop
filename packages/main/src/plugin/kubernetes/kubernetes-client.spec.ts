@@ -61,6 +61,8 @@ import type { PodCreationSource, ScalableControllerType } from './kubernetes-cli
 import { KubernetesClient } from './kubernetes-client.js';
 import { ResizableTerminalWriter } from './kubernetes-exec-transmitter.js';
 
+vi.mock(import('node:fs'));
+
 const _onDidChangeConfiguration = new Emitter<IConfigurationChangeEvent>();
 const configurationRegistry: ConfigurationRegistry = {
   onDidChangeConfiguration: _onDidChangeConfiguration.event,
@@ -1122,6 +1124,7 @@ test('Expect applyResourcesFromYAML to correctly call applyResources after loadi
 });
 
 test('setupWatcher sends kubernetes-context-update when kubeconfig file changes', async () => {
+  vi.mocked(fs.existsSync).mockReturnValue(true);
   const client = createTestClient();
   const fileSystemMonitoringSpy = vi.spyOn(fileSystemMonitoring, 'createFileSystemWatcher');
   const onDidChangeMock = vi.fn();
@@ -2334,6 +2337,63 @@ test('test sync resources was called with no resourceVersion, uid, selfLink, or 
         annotations: {
           // eslint-disable-next-line no-useless-escape
           'kubectl.kubernetes.io/last-applied-configuration': `{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"name\":\"test-pod\",\"resourceVersion\":\"123\",\"uid\":\"uid123\",\"selfLink\":\"/api/v1/namespaces/default/pods/test-pod\",\"creationTimestamp\":\"1970-01-01T00:00:00.042Z\",\"annotations\":{}}}`,
+        },
+        name: 'test-pod',
+        namespace: 'default',
+      },
+    },
+    undefined,
+    undefined,
+    'podman-desktop',
+  );
+});
+
+test('test sync resources was called with no status being passed through', async () => {
+  const client = createTestClient('default');
+  const context = 'test-context';
+  const namespace = 'default';
+  const manifests = [
+    {
+      apiVersion: 'v1',
+      kind: 'Pod',
+      metadata: {
+        name: 'test-pod',
+        resourceVersion: '123',
+        uid: 'uid123',
+        selfLink: '/api/v1/namespaces/default/pods/test-pod',
+        creationTimestamp: new Date(42),
+      },
+      status: {
+        phase: 'Running',
+        conditions: [
+          {
+            type: 'Ready',
+            status: 'True',
+          },
+        ],
+      },
+    },
+  ];
+
+  const mockedPatch = vi.fn();
+
+  makeApiClientMock.mockReturnValue({
+    read: vi.fn(),
+    create: vi.fn(),
+    patch: mockedPatch,
+  });
+
+  // Call the syncResources method with 'create' action
+  await client.syncResources(context, manifests, 'apply', namespace);
+
+  // Expect it to be called with NO status
+  expect(mockedPatch).toHaveBeenCalledWith(
+    {
+      apiVersion: 'v1',
+      kind: 'Pod',
+      metadata: {
+        annotations: {
+          'kubectl.kubernetes.io/last-applied-configuration': expect.anything(),
         },
         name: 'test-pod',
         namespace: 'default',

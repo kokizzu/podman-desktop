@@ -146,13 +146,20 @@ const config = {
         arch: ['x64', 'arm64'],
       },
     ],
-    sign: configuration => azureCodeSign(configuration.path),
+    /**
+     * TODO: replace with {@link import('electron-builder').Configuration#win#azureSignOptions}
+     * references:
+     * - https://www.electron.build/code-signing-win#using-azure-trusted-signing-beta
+     * - https://github.com/electron-userland/electron-builder/releases/tag/v26.0.0
+     * - https://github.com/electron-userland/electron-builder/pull/8582
+     */
+    signtoolOptions: {
+      sign: configuration => azureCodeSign(configuration.path),
+    },
   },
   flatpak: {
     license: 'LICENSE',
     finishArgs: [
-      // allow to execute commands remotely
-      '--socket=session-bus',
       '--socket=wayland',
       '--socket=x11',
       '--share=ipc',
@@ -175,6 +182,11 @@ const config = {
       '--talk-name=org.freedesktop.secrets',
       // In KDE Desktop Environment
       '--talk-name=org.kde.kwalletd6',
+      // Allow registration and management of system tray icons and their associated
+      // notifications in KDE Desktop Environment
+      '--talk-name=org.kde.StatusNotifierWatcher',
+      // Allow to interact with Flatpak system to execute commands outside the application's sandbox
+      '--talk-name=org.freedesktop.Flatpak',
     ],
     useWaylandFlags: 'false',
     artifactName: 'podman-desktop-${version}.${ext}',
@@ -241,12 +253,11 @@ if (process.env.AIRGAP_DOWNLOAD) {
   };
 }
 
-if (process.env.APPLE_TEAM_ID) {
-  config.mac.notarize = {
-    teamId: process.env.APPLE_TEAM_ID,
-  };
-}
-
+/**
+ * @deprecated use {@link import('electron-builder').Configuration#win#azureSignOptions}
+ * @param filePath
+ * @return {Promise<void>}
+ */
 const azureCodeSign = filePath => {
   if (!process.env.AZURE_KEY_VAULT_URL) {
     console.log('Skipping code signing, no environment variables set for that.');

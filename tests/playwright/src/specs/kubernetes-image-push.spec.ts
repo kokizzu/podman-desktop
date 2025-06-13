@@ -26,11 +26,9 @@ import { canRunKindTests } from '../setupFiles/setup-kind';
 import { createKindCluster, deleteCluster } from '../utility/cluster-operations';
 import { expect as playExpect, test } from '../utility/fixtures';
 import {
-  checkDeploymentReplicasInfo,
   checkKubernetesResourceState,
   createKubernetesResource,
   deleteKubernetesResource,
-  editDeploymentYamlFile,
 } from '../utility/kubernetes';
 import { ensureCliInstalled } from '../utility/operations';
 import { waitForPodmanMachineStartup } from '../utility/wait';
@@ -41,12 +39,13 @@ const KIND_NODE: string = `${CLUSTER_NAME}-control-plane`;
 const RESOURCE_NAME: string = 'kind';
 const KUBERNETES_CONTEXT = `kind-${CLUSTER_NAME}`;
 const KUBERNETES_NAMESPACE = 'default';
-const DEPLOYMENT_NAME = 'test-deployment-resource';
+const DEPLOYMENT_NAME = 'test-image-push';
 const KUBERNETES_RUNTIME = {
   runtime: PlayYamlRuntime.Kubernetes,
   kubernetesContext: KUBERNETES_CONTEXT,
   kubernetesNamespace: KUBERNETES_NAMESPACE,
 };
+const IMAGE_NAME = 'ghcr.io/linuxcontainers/alpine';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,7 +58,7 @@ test.skip(!canRunKindTests(), `This test can't run on a windows rootless machine
 
 test.beforeAll(async ({ runner, welcomePage, page, navigationBar }) => {
   test.setTimeout(350_000);
-  runner.setVideoAndTraceName('kubernetes-edit-yaml');
+  runner.setVideoAndTraceName('kubernetes-image-push');
 
   await welcomePage.handleWelcomePage(true);
   await waitForPodmanMachineStartup(page);
@@ -89,44 +88,51 @@ test.afterAll(async ({ runner, page }) => {
   }
 });
 
-test.describe.serial('Kubernetes deployment resource E2E Test', { tag: '@k8s_e2e' }, () => {
-  test('Kubernetes Pods page should be empty', async ({ navigationBar }) => {
-    const kubernetesBar = await navigationBar.openKubernetes();
-    const kubernetesPodsPage = await kubernetesBar.openTabPage(KubernetesResources.Pods);
+test.describe.serial(
+  'Kubernetes pushing an image to the cluster and reusing it with a pod E2E Test',
+  { tag: '@k8s_e2e' },
+  () => {
+    test('Pull image and push it to the cluster', async ({ navigationBar }) => {
+      let imagesPage = await navigationBar.openImages();
+      await playExpect(imagesPage.heading).toBeVisible();
+      const pullImagePage = await imagesPage.openPullImage();
+      await playExpect(pullImagePage.heading).toBeVisible();
+      imagesPage = await pullImagePage.pullImage(IMAGE_NAME);
+      await playExpect(imagesPage.heading).toBeVisible();
+      await playExpect.poll(async () => imagesPage.waitForImageExists(IMAGE_NAME, 30_000), { timeout: 0 }).toBeTruthy();
 
-    await playExpect.poll(async () => kubernetesPodsPage.content.textContent()).toContain('No pods');
-  });
-  test('Create a Kubernetes deployment resource', async ({ page }) => {
-    test.setTimeout(80_000);
-    await createKubernetesResource(
-      page,
-      KubernetesResources.Deployments,
-      DEPLOYMENT_NAME,
-      DEPLOYMENT_YAML_PATH,
-      KUBERNETES_RUNTIME,
-    );
-    await checkDeploymentReplicasInfo(page, KubernetesResources.Deployments, DEPLOYMENT_NAME, 3);
-    await checkKubernetesResourceState(
-      page,
-      KubernetesResources.Deployments,
-      DEPLOYMENT_NAME,
-      KubernetesResourceState.Running,
-      80_000,
-    );
-  });
-  test('Edit the Kubernetes deployment YAML file', async ({ page }) => {
-    test.setTimeout(120_000);
-    await editDeploymentYamlFile(page, KubernetesResources.Deployments, DEPLOYMENT_NAME);
-    await checkDeploymentReplicasInfo(page, KubernetesResources.Deployments, DEPLOYMENT_NAME, 5);
-    await checkKubernetesResourceState(
-      page,
-      KubernetesResources.Deployments,
-      DEPLOYMENT_NAME,
-      KubernetesResourceState.Running,
-      80_000,
-    );
-  });
-  test('Delete the Kubernetes deployment resource', async ({ page }) => {
-    await deleteKubernetesResource(page, KubernetesResources.Deployments, DEPLOYMENT_NAME);
-  });
-});
+      const imageDetails = await imagesPage.openImageDetails(IMAGE_NAME);
+      await playExpect(imageDetails.heading).toBeVisible();
+      await imageDetails.pushImageToKindCluster();
+    });
+    test('Kubernetes Pods page should be empty', async ({ navigationBar }) => {
+      const kubernetesBar = await navigationBar.openKubernetes();
+      const kubernetesPodsPage = await kubernetesBar.openTabPage(KubernetesResources.Pods);
+      await playExpect(kubernetesPodsPage.heading).toBeVisible();
+
+      await playExpect.poll(async () => kubernetesPodsPage.content.textContent()).toContain('No pods');
+    });
+    test('Create a Kubernetes deployment resource', async ({ page }) => {
+      test.setTimeout(80_000);
+      await createKubernetesResource(
+        page,
+        KubernetesResources.Pods,
+        DEPLOYMENT_NAME + '-pod',
+        DEPLOYMENT_YAML_PATH,
+        KUBERNETES_RUNTIME,
+      );
+
+      await checkKubernetesResourceState(
+        page,
+        KubernetesResources.Pods,
+        DEPLOYMENT_NAME + '-pod',
+        KubernetesResourceState.Running,
+        80_000,
+      );
+    });
+
+    test('Delete the Kubernetes pod', async ({ page }) => {
+      await deleteKubernetesResource(page, KubernetesResources.Pods, DEPLOYMENT_NAME);
+    });
+  },
+);

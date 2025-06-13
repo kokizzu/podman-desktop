@@ -181,6 +181,7 @@ const containerProviderRegistry: ContainerProviderRegistry = {
   listImages: vi.fn(),
   podmanListImages: vi.fn(),
   listInfos: vi.fn(),
+  pullImage: vi.fn(),
 } as unknown as ContainerProviderRegistry;
 
 const inputQuickPickRegistry: InputQuickPickRegistry = {} as unknown as InputQuickPickRegistry;
@@ -382,19 +383,19 @@ test('Should watch for files and load them at startup', async () => {
     isFile: () => true,
     isDirectory: () => false,
     name: 'foo.cdix',
-  } as unknown as fs.Dirent;
+  } as unknown as fs.Dirent<Buffer<ArrayBufferLike>>;
 
   const ent2 = {
     isFile: () => true,
     isDirectory: () => false,
     name: 'bar.foo',
-  } as unknown as fs.Dirent;
+  } as unknown as fs.Dirent<Buffer<ArrayBufferLike>>;
 
   const ent3 = {
     isFile: () => false,
     isDirectory: () => true,
     name: 'baz',
-  } as unknown as fs.Dirent;
+  } as unknown as fs.Dirent<Buffer<ArrayBufferLike>>;
   readdirMock.mockResolvedValue([ent1, ent2, ent3]);
 
   // mock loadPackagedFile
@@ -1930,6 +1931,10 @@ describe('window', async () => {
 });
 
 describe('containerEngine', async () => {
+  const CONTAINER_PROVIDER_MOCK = {
+    name: 'dummyProvider',
+  } as unknown as containerDesktopAPI.ContainerProviderConnection;
+
   describe('buildImage', () => {
     let api: typeof containerDesktopAPI;
     beforeEach(() => {
@@ -2046,15 +2051,11 @@ describe('containerEngine', async () => {
     expect(api).toBeDefined();
 
     const images = await api.containerEngine.listImages({
-      provider: {
-        name: 'dummyProvider',
-      } as unknown as containerDesktopAPI.ContainerProviderConnection,
+      provider: CONTAINER_PROVIDER_MOCK,
     });
     expect(images.length).toBe(0);
     expect(containerProviderRegistry.podmanListImages).toHaveBeenCalledWith({
-      provider: {
-        name: 'dummyProvider',
-      },
+      provider: CONTAINER_PROVIDER_MOCK,
     });
   });
 
@@ -2075,16 +2076,68 @@ describe('containerEngine', async () => {
     expect(api).toBeDefined();
 
     const infos = await api.containerEngine.listInfos({
-      provider: {
-        name: 'dummyProvider',
-      } as unknown as containerDesktopAPI.ContainerProviderConnection,
+      provider: CONTAINER_PROVIDER_MOCK,
     });
     expect(infos.length).toBe(0);
     expect(containerProviderRegistry.listInfos).toHaveBeenCalledWith({
-      provider: {
-        name: 'dummyProvider',
-      },
+      provider: CONTAINER_PROVIDER_MOCK,
     });
+  });
+
+  test('pullImage with minimal arguments', async () => {
+    const CALLBACK_MOCK = vi.fn();
+    const api = createApi();
+    expect(api).toBeDefined();
+
+    await api.containerEngine.pullImage(CONTAINER_PROVIDER_MOCK, 'dummy-image:tag', CALLBACK_MOCK);
+    expect(containerProviderRegistry.pullImage).toHaveBeenCalledWith(
+      CONTAINER_PROVIDER_MOCK,
+      'dummy-image:tag',
+      CALLBACK_MOCK,
+      undefined, // platform
+      undefined, // abort controller
+    );
+  });
+
+  test('pullImage with a cancellation token', async () => {
+    const CANCELLATION_TOKEN: containerDesktopAPI.CancellationToken = {
+      onCancellationRequested: vi.fn(),
+      isCancellationRequested: false,
+    };
+    const api = createApi();
+    expect(api).toBeDefined();
+
+    // pass out cancellation token to the containerEngine api
+    await api.containerEngine.pullImage(
+      CONTAINER_PROVIDER_MOCK,
+      'dummy-image:tag',
+      vi.fn(),
+      undefined,
+      CANCELLATION_TOKEN,
+    );
+
+    // ensure an abort controller has been passed to pull image
+    expect(containerProviderRegistry.pullImage).toHaveBeenCalledWith(
+      CONTAINER_PROVIDER_MOCK,
+      'dummy-image:tag',
+      expect.any(Function),
+      undefined, // platform
+      expect.any(AbortController), // abort controller
+    );
+
+    // get back the controller using vi.mocked
+    const controller: AbortController | undefined = vi.mocked(containerProviderRegistry.pullImage).mock.calls[0]?.[4];
+    expect(controller).toBeDefined();
+    // ensure it is not aborted
+    expect(controller?.signal.aborted).toBeFalsy();
+
+    // expect one subscriber, and get it
+    expect(CANCELLATION_TOKEN.onCancellationRequested).toHaveBeenCalledOnce();
+    const callback = vi.mocked(CANCELLATION_TOKEN.onCancellationRequested).mock.calls[0]?.[0];
+    callback?.(undefined);
+
+    // the signal should be marked as aborted
+    expect(controller?.signal.aborted).toBeTruthy();
   });
 });
 
@@ -2277,27 +2330,27 @@ test('withProgress should add the extension id to the routeId', async () => {
 describe('loading extension folders', () => {
   const fileEntry = {
     isDirectory: () => false,
-  } as fs.Dirent;
+  } as unknown as fs.Dirent<Buffer<ArrayBufferLike>>;
   const nodeModulesEntry = {
     isDirectory: () => true,
     name: 'node_modules',
-  } as fs.Dirent;
+  } as unknown as fs.Dirent<Buffer<ArrayBufferLike>>;
   const dirEntry = {
     isDirectory: () => true,
     name: 'extension1',
-  } as fs.Dirent;
+  } as unknown as fs.Dirent<Buffer<ArrayBufferLike>>;
   const dirEntry2 = {
     isDirectory: () => true,
     name: 'extension2',
-  } as fs.Dirent;
+  } as unknown as fs.Dirent<Buffer<ArrayBufferLike>>;
   const dirEntry3 = {
     isDirectory: () => true,
     name: 'extension3',
-  } as fs.Dirent;
+  } as unknown as fs.Dirent<Buffer<ArrayBufferLike>>;
   const dirEntry4 = {
     isDirectory: () => true,
     name: 'extension4',
-  } as fs.Dirent;
+  } as unknown as fs.Dirent<Buffer<ArrayBufferLike>>;
 
   describe('in dev mode', () => {
     beforeEach(() => {

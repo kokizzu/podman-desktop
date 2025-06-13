@@ -1,6 +1,7 @@
 name: Bug 🐞
 description: Report a bug report
 labels: [kind/bug 🐞]
+projects: ["podman-desktop/Podman Desktop Planning"]
 
 body:
   - type: markdown
@@ -49,8 +50,9 @@ body:
       label: Version
       description: What version of the software are you running?
       options:
-        - "1.18.0"
+        - "1.19.1"
         - "next (development version)"
+        - "1.18.0"
         - "1.17.0"
         - "1.16.2"
         - "1.16.1"

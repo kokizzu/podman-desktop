@@ -23,11 +23,16 @@ import { promisify } from 'node:util';
 import * as extensionApi from '@podman-desktop/api';
 import { compare } from 'compare-versions';
 
-import { BaseCheck, OrCheck, SequenceCheck } from '../checks/base-check';
+import { OrCheck, SequenceCheck } from '../checks/base-check';
 import { getDetectionChecks } from '../checks/detection-checks';
 import { HyperVCheck } from '../checks/hyperv-check';
 import { MacCPUCheck, MacMemoryCheck, MacPodmanInstallCheck, MacVersionCheck } from '../checks/macos-checks';
 import { VirtualMachinePlatformCheck } from '../checks/virtual-machine-platform-check';
+import { WinBitCheck } from '../checks/win-bit-check';
+import { WinMemoryCheck } from '../checks/win-memory-check';
+import { WinVersionCheck } from '../checks/win-version-check';
+import { WSLVersionCheck } from '../checks/wsl-version-check';
+import { WSL2Check } from '../checks/wsl2-check';
 import { PodmanCleanupMacOS } from '../cleanup/podman-cleanup-macos';
 import { PodmanCleanupWindows } from '../cleanup/podman-cleanup-windows';
 import type { MachineJSON } from '../extension';
@@ -43,12 +48,11 @@ import {
   START_NOW_MACHINE_INIT_SUPPORTED_KEY,
   USER_MODE_NETWORKING_SUPPORTED_KEY,
 } from '../extension';
-import { WslHelper } from '../helpers/wsl-helper';
+import { BaseInstaller } from '../installer/base-installer';
 import * as podman5JSON from '../podman5.json';
 import type { InstalledPodman } from './podman-cli';
 import { getPodmanCli, getPodmanInstallation } from './podman-cli';
-import { getPowerShellClient } from './powershell';
-import { getAssetsFolder, normalizeWSLOutput } from './util';
+import { getAssetsFolder } from './util';
 
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
@@ -456,20 +460,6 @@ export class PodmanInstall {
   }
 }
 
-abstract class BaseInstaller implements Installer {
-  abstract install(): Promise<boolean>;
-
-  abstract update(): Promise<boolean>;
-
-  abstract getUpdatePreflightChecks(): extensionApi.InstallCheck[];
-
-  abstract getPreflightChecks(): extensionApi.InstallCheck[];
-
-  requireUpdate(installedVersion: string): boolean {
-    return compare(installedVersion, getBundledPodmanVersion(), '<');
-  }
-}
-
 export class WinInstaller extends BaseInstaller {
   constructor(private extensionContext: extensionApi.ExtensionContext) {
     super();
@@ -593,238 +583,5 @@ class MacOSInstaller extends BaseInstaller {
 
   getUpdatePreflightChecks(): extensionApi.InstallCheck[] {
     return [new MacPodmanInstallCheck()];
-  }
-}
-
-class WinBitCheck extends BaseCheck {
-  title = 'Windows 64bit';
-
-  private ARCH_X64 = 'x64';
-  private ARCH_ARM = 'arm64';
-
-  async execute(): Promise<extensionApi.CheckResult> {
-    const currentArch = process.arch;
-    if (this.ARCH_X64 === currentArch || this.ARCH_ARM === currentArch) {
-      return this.createSuccessfulResult();
-    } else {
-      return this.createFailureResult({
-        description: 'WSL2 works only on 64bit OS.',
-        docLinksDescription: 'Learn about WSL requirements:',
-        docLinks: {
-          url: 'https://docs.microsoft.com/en-us/windows/wsl/install-manual#step-2---check-requirements-for-running-wsl-2',
-          title: 'WSL2 Manual Installation Steps',
-        },
-      });
-    }
-  }
-}
-
-class WinVersionCheck extends BaseCheck {
-  title = 'Windows Version';
-
-  private MIN_BUILD = 19043; //it represents version 21H1 windows 10
-  async execute(): Promise<extensionApi.CheckResult> {
-    const winRelease = os.release();
-    if (winRelease.startsWith('10.0.')) {
-      const splitRelease = winRelease.split('.');
-      const winBuild = splitRelease[2];
-      if (Number.parseInt(winBuild) >= this.MIN_BUILD) {
-        return { successful: true };
-      } else {
-        return this.createFailureResult({
-          description: `To be able to run WSL2 you need Windows 10 Build ${this.MIN_BUILD} or later.`,
-          docLinksDescription: 'Learn about WSL requirements:',
-          docLinks: {
-            url: 'https://docs.microsoft.com/en-us/windows/wsl/install-manual#step-2---check-requirements-for-running-wsl-2',
-            title: 'WSL2 Manual Installation Steps',
-          },
-        });
-      }
-    } else {
-      return this.createFailureResult({
-        description: 'WSL2 works only on Windows 10 and newest OS',
-        docLinksDescription: 'Learn about WSL requirements:',
-        docLinks: {
-          url: 'https://docs.microsoft.com/en-us/windows/wsl/install-manual#step-2---check-requirements-for-running-wsl-2',
-          title: 'WSL2 Manual Installation Steps',
-        },
-      });
-    }
-  }
-}
-
-class WinMemoryCheck extends BaseCheck {
-  title = 'RAM';
-  private REQUIRED_MEM = 5 * 1024 * 1024 * 1024; // 5Gb
-
-  async execute(): Promise<extensionApi.CheckResult> {
-    const totalMem = os.totalmem();
-    if (this.REQUIRED_MEM <= totalMem) {
-      return this.createSuccessfulResult();
-    } else {
-      return this.createFailureResult({
-        description: 'You need at least 5GB to run Podman.',
-      });
-    }
-  }
-}
-
-export class WSL2Check extends BaseCheck {
-  title = 'WSL2 Installed';
-  installWSLCommandId = 'podman.onboarding.installWSL';
-
-  constructor(private extensionContext?: extensionApi.ExtensionContext) {
-    super();
-  }
-
-  async init(): Promise<void> {
-    if (this.extensionContext) {
-      const wslCommand = extensionApi.commands.registerCommand(this.installWSLCommandId, async () => {
-        const installSucceeded = await this.installWSL();
-        if (installSucceeded) {
-          // if action succeeded, do a re-check of all podman requirements so user can be moved forward if all missing pieces have been installed
-          await extensionApi.commands.executeCommand('podman.onboarding.checkRequirementsCommand');
-        }
-      });
-      this.extensionContext.subscriptions.push(wslCommand);
-    }
-  }
-
-  async isUserAdmin(): Promise<boolean> {
-    const client = await getPowerShellClient();
-    return client.isUserAdmin();
-  }
-
-  async execute(): Promise<extensionApi.CheckResult> {
-    try {
-      const isAdmin = await this.isUserAdmin();
-      const isWSL = await this.isWSLPresent();
-      const isRebootNeeded = await this.isRebootNeeded();
-
-      if (!isWSL) {
-        if (isAdmin) {
-          return this.createFailureResult({
-            description: 'WSL2 is not installed.',
-            docLinksDescription: `Call 'wsl --install --no-distribution' in a terminal.`,
-            docLinks: {
-              url: 'https://learn.microsoft.com/en-us/windows/wsl/install',
-              title: 'WSL2 Manual Installation Steps',
-            },
-            fixCommand: {
-              id: this.installWSLCommandId,
-              title: 'Install WSL2',
-            },
-          });
-        } else {
-          return this.createFailureResult({
-            description: 'WSL2 is not installed or you do not have permissions to run WSL2.',
-            docLinksDescription: 'Contact your Administrator to setup WSL2.',
-            docLinks: {
-              url: 'https://learn.microsoft.com/en-us/windows/wsl/install',
-              title: 'WSL2 Manual Installation Steps',
-            },
-          });
-        }
-      } else if (isRebootNeeded) {
-        return this.createFailureResult({
-          description:
-            'WSL2 seems to be installed but the system needs to be restarted so the changes can take effect.',
-          docLinksDescription: `If already restarted, call 'wsl --install --no-distribution' in a terminal.`,
-          docLinks: {
-            url: 'https://learn.microsoft.com/en-us/windows/wsl/install',
-            title: 'WSL2 Manual Installation Steps',
-          },
-        });
-      }
-    } catch (err) {
-      return this.createFailureResult({
-        description: 'Could not detect WSL2',
-        docLinks: {
-          url: 'https://learn.microsoft.com/en-us/windows/wsl/install',
-          title: 'WSL2 Manual Installation Steps',
-        },
-      });
-    }
-
-    return this.createSuccessfulResult();
-  }
-
-  private async isWSLPresent(): Promise<boolean> {
-    try {
-      const { stdout: res } = await extensionApi.process.exec('wsl', ['--set-default-version', '2'], {
-        env: { WSL_UTF8: '1' },
-      });
-      const output = normalizeWSLOutput(res);
-      return !!output;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  private async installWSL(): Promise<boolean> {
-    try {
-      await extensionApi.process.exec('wsl', ['--install', '--no-distribution'], {
-        env: { WSL_UTF8: '1' },
-      });
-
-      return true;
-    } catch (error) {
-      const runError = error as extensionApi.RunError;
-      let message = runError.message ? `${runError.message}\n` : '';
-      message += runError.stdout || '';
-      message += runError.stderr || '';
-      throw new Error(message);
-    }
-  }
-
-  private async isRebootNeeded(): Promise<boolean> {
-    try {
-      await extensionApi.process.exec('wsl', ['-l'], {
-        env: { WSL_UTF8: '1' },
-      });
-    } catch (error) {
-      // we only return true for the WSL_E_WSL_OPTIONAL_COMPONENT_REQUIRED error code
-      // as other errors may not be connected to a reboot, like
-      // WSL_E_DEFAULT_DISTRO_NOT_FOUND = wsl was installed without the default distro
-      const runError = error as extensionApi.RunError;
-      if (runError.stdout.includes('Wsl/WSL_E_WSL_OPTIONAL_COMPONENT_REQUIRED')) {
-        return true;
-      } else if (runError.stdout.includes('Wsl/WSL_E_DEFAULT_DISTRO_NOT_FOUND')) {
-        // treating this log differently as we install wsl without any distro
-        console.log('WSL has been installed without the default distribution');
-      } else {
-        console.error(error);
-      }
-    }
-    return false;
-  }
-}
-
-export class WSLVersionCheck extends BaseCheck {
-  title = 'WSL Version';
-
-  minVersion = '1.2.5';
-
-  async execute(): Promise<extensionApi.CheckResult> {
-    try {
-      const wslHelper = new WslHelper();
-      const wslVersionData = await wslHelper.getWSLVersionData();
-      if (wslVersionData.wslVersion) {
-        if (compare(wslVersionData.wslVersion, this.minVersion, '>=')) {
-          return this.createSuccessfulResult();
-        } else {
-          return this.createFailureResult({
-            description: `Your WSL version is ${wslVersionData.wslVersion} but it should be >= ${this.minVersion}.`,
-            docLinksDescription: `Call 'wsl --update' to update your WSL installation. If you do not have access to the Windows store you can run 'wsl --update --web-download'. If you still receive an error please contact your IT administator as 'Windows Store Applications' may have been disabled.`,
-          });
-        }
-      }
-    } catch (err) {
-      // ignore error
-    }
-    return this.createFailureResult({
-      description: `WSL version should be >= ${this.minVersion}.`,
-      docLinksDescription: `Call 'wsl --update' and 'wsl --version' in a terminal to check your wsl version.`,
-    });
   }
 }

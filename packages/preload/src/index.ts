@@ -26,6 +26,7 @@ import type {
   Cluster,
   Context,
   KubernetesObject,
+  User,
   V1ConfigMap,
   V1CronJob,
   V1Deployment,
@@ -66,6 +67,7 @@ import type { HistoryInfo } from '/@api/history-info';
 import type { IconInfo } from '/@api/icon-info';
 import type { ImageCheckerInfo } from '/@api/image-checker-info';
 import type { ImageFilesInfo } from '/@api/image-files-info';
+import type { ImageFilesystemLayersUI } from '/@api/image-filesystem-layers';
 import type { ImageInfo, PodmanListImagesOptions } from '/@api/image-info';
 import type { ImageInspectInfo } from '/@api/image-inspect-info';
 import type { ImageSearchOptions, ImageSearchResult, ImageTagsListOptions } from '/@api/image-registry';
@@ -537,6 +539,7 @@ export function initExposure(): void {
       engineId: string;
       containerId: string;
       callback: (name: string, data: string) => void;
+      cancellableTokenId?: number;
     }): Promise<void> => {
       onDataCallbacksLogsContainerId++;
       onDataCallbacksLogsContainer.set(onDataCallbacksLogsContainerId, logsParams.callback);
@@ -544,6 +547,7 @@ export function initExposure(): void {
         engineId: logsParams.engineId,
         containerId: logsParams.containerId,
         onDataId: onDataCallbacksLogsContainerId,
+        cancellableTokenId: logsParams.cancellableTokenId,
       });
     },
   );
@@ -1242,6 +1246,7 @@ export function initExposure(): void {
       eventCollect: (key: symbol, eventName: 'finish' | 'stream' | 'error', data: string) => void,
       cancellableTokenId?: number,
       buildargs?: { [key: string]: string },
+      taskId?: number,
     ): Promise<unknown> => {
       onDataCallbacksBuildImageId++;
       onDataCallbacksBuildImage.set(onDataCallbacksBuildImageId, eventCollect);
@@ -1256,6 +1261,7 @@ export function initExposure(): void {
         onDataCallbacksBuildImageId,
         cancellableTokenId,
         buildargs,
+        taskId,
       );
     },
   );
@@ -1563,6 +1569,10 @@ export function initExposure(): void {
 
   contextBridge.exposeInMainWorld('removeExtension', async (extensionId: string): Promise<void> => {
     return ipcInvoke('extension-loader:removeExtension', extensionId);
+  });
+
+  contextBridge.exposeInMainWorld('ensureExtensionIsEnabled', async (extensionId: string): Promise<void> => {
+    return ipcInvoke('extension-loader:ensureExtensionIsEnabled', extensionId);
   });
 
   contextBridge.exposeInMainWorld('openExternal', async (link: string): Promise<void> => {
@@ -1877,8 +1887,21 @@ export function initExposure(): void {
   });
   contextBridge.exposeInMainWorld(
     'kubernetesUpdateContext',
-    async (contextName: string, newContextName: string, newContextNamespace: string): Promise<void> => {
-      return ipcInvoke('kubernetes-client:updateContext', contextName, newContextName, newContextNamespace);
+    async (
+      contextName: string,
+      newContextName: string,
+      newContextNamespace: string,
+      newContextCluster: string,
+      newContextUser: string,
+    ): Promise<void> => {
+      return ipcInvoke(
+        'kubernetes-client:updateContext',
+        contextName,
+        newContextName,
+        newContextNamespace,
+        newContextCluster,
+        newContextUser,
+      );
     },
   );
   contextBridge.exposeInMainWorld('kubernetesDeleteContext', async (contextName: string): Promise<Context[]> => {
@@ -1934,6 +1957,10 @@ export function initExposure(): void {
 
   contextBridge.exposeInMainWorld('kubernetesGetClusters', async (): Promise<Cluster[]> => {
     return ipcInvoke('kubernetes-client:getClusters');
+  });
+
+  contextBridge.exposeInMainWorld('kubernetesGetUsers', async (): Promise<User[]> => {
+    return ipcInvoke('kubernetes-client:getUsers');
   });
 
   contextBridge.exposeInMainWorld('kubernetesGetCurrentNamespace', async (): Promise<string | undefined> => {
@@ -2429,7 +2456,7 @@ export function initExposure(): void {
       id: string,
       image: containerDesktopAPI.ImageInfo,
       cancellationToken?: number,
-    ): Promise<containerDesktopAPI.ImageFilesystemLayers | undefined> => {
+    ): Promise<ImageFilesystemLayersUI | undefined> => {
       return ipcInvoke('image-files:getFilesystemLayers', id, image, cancellationToken);
     },
   );

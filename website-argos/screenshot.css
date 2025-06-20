@@ -5,8 +5,7 @@ iframe,
 /* Gifs load lazily and are animated */
   img[src$='.gif'],
 /* Algolia keyboard shortcuts appear with a little delay */
-  .DocSearch-Button-Keys
-  > kbd,
+.DocSearch-Button-Keys > kbd,
 /* The live playground preview can often display dates/counters */
   [class*='playgroundPreview'] {
   visibility: hidden;
@@ -27,6 +26,6 @@ video {
 }
 
 /* Hide the GitHub stars badge, since this dynamically changes, it would create false errors in Argos */
-#github-stars-badge {
+#github-stars-button {
   visibility: hidden;
 }

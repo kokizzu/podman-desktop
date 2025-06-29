@@ -31,6 +31,8 @@ import type {
 import type { MenuRegistry } from '/@/plugin/menu-registry.js';
 import type { NavigationManager } from '/@/plugin/navigation/navigation-manager.js';
 import type { WebviewRegistry } from '/@/plugin/webview/webview-registry.js';
+import type { IConfigurationNode, IConfigurationRegistry } from '/@api/configuration/models.js';
+import type { Event } from '/@api/event.js';
 import type { ExtensionError, ExtensionInfo, ExtensionUpdateInfo } from '/@api/extension-info.js';
 import { DEFAULT_TIMEOUT, ExtensionLoaderSettings } from '/@api/extension-loader-settings.js';
 import type { ImageInspectInfo } from '/@api/image-inspect-info.js';
@@ -44,13 +46,11 @@ import { CancellationTokenSource } from '../cancellation-token.js';
 import type { Certificates } from '../certificates.js';
 import type { CliToolRegistry } from '../cli-tool-registry.js';
 import type { CommandRegistry } from '../command-registry.js';
-import type { ConfigurationRegistry, IConfigurationNode } from '../configuration-registry.js';
 import type { ContainerProviderRegistry } from '../container-registry.js';
 import type { Context } from '../context/context.js';
 import type { CustomPickRegistry } from '../custompick/custompick-registry.js';
 import type { DialogRegistry } from '../dialog-registry.js';
 import type { Directories } from '../directories.js';
-import type { Event } from '../events/emitter.js';
 import { Emitter } from '../events/emitter.js';
 import type { FilesystemMonitoring } from '../filesystem-monitoring.js';
 import type { IconRegistry } from '../icon-registry.js';
@@ -136,7 +136,7 @@ export class ExtensionLoader {
     private commandRegistry: CommandRegistry,
     private menuRegistry: MenuRegistry,
     private providerRegistry: ProviderRegistry,
-    private configurationRegistry: ConfigurationRegistry,
+    private configurationRegistry: IConfigurationRegistry,
     private imageRegistry: ImageRegistry,
     private apiSender: ApiSenderType,
     private trayMenuRegistry: TrayMenuRegistry,
@@ -203,6 +203,7 @@ export class ExtensionLoader {
       id: extension.id,
       path: extension.path,
       removable: extension.removable,
+      devMode: extension.devMode,
       update: extension.update,
       readme: extension.readme,
       icon: extension.manifest.icon ? this.updateImage(extension.manifest.icon, extension.path) : undefined,
@@ -406,7 +407,7 @@ export class ExtensionLoader {
     analyzedExtensions.push(...analyzedFoldersExtension);
 
     const analyzedExternalExtensions = (
-      await Promise.all(externalExtensions.map(folder => this.analyzeExtension(folder, false)))
+      await Promise.all(externalExtensions.map(folder => this.analyzeExtension(folder, false, true)))
     ).filter(extension => !extension.error);
     analyzedExtensions.push(...analyzedExternalExtensions);
 
@@ -442,7 +443,7 @@ export class ExtensionLoader {
   protected async loadDevelopmentFolderExtensions(analyzedExtensions: AnalyzedExtension[]): Promise<void> {
     for (const folder of this.extensionDevelopmentFolder.getDevelopmentFolders()) {
       if (fs.existsSync(folder.path)) {
-        const analyzedExtension = await this.analyzeExtension(folder.path, false);
+        const analyzedExtension = await this.analyzeExtension(folder.path, false, true);
         if (!analyzedExtension.error) {
           analyzedExtensions.push(analyzedExtension);
         } else {
@@ -707,6 +708,9 @@ export class ExtensionLoader {
     extension.api ??= this.createApi(extension);
     const extensionWithApi = extension as AnalyzedExtensionWithApi;
     this.analyzedExtensions.set(extension.id, extensionWithApi);
+    if (!extension.devMode) {
+      this.extensionDevelopmentFolder.addExternalExtensionId(extension.id);
+    }
     this.extensionState.delete(extension.id);
     this.extensionStateErrors.delete(extension.id);
 
@@ -750,8 +754,12 @@ export class ExtensionLoader {
     }
   }
 
-  async analyzeExtension(extensionPath: string, removable: boolean): Promise<AnalyzedExtensionWithApi> {
-    const analyzedExtension = await this.extensionAnalyzer.analyzeExtension(extensionPath, removable);
+  async analyzeExtension(
+    extensionPath: string,
+    removable: boolean,
+    devMode: boolean = false,
+  ): Promise<AnalyzedExtensionWithApi> {
+    const analyzedExtension = await this.extensionAnalyzer.analyzeExtension(extensionPath, removable, devMode);
 
     const api = this.createApi(analyzedExtension);
 
@@ -1147,8 +1155,22 @@ export class ExtensionLoader {
         imageName: string,
         callback: (event: containerDesktopAPI.PullEvent) => void,
         platform?: string,
+        token?: containerDesktopAPI.CancellationToken,
       ): Promise<void> {
-        return containerProviderRegistry.pullImage(providerContainerConnection, imageName, callback, platform);
+        // transform the extension cancellation token to an abort controller
+        let abortController: AbortController | undefined;
+        if (token) {
+          abortController = new AbortController();
+          token.onCancellationRequested(() => abortController?.abort());
+        }
+
+        return containerProviderRegistry.pullImage(
+          providerContainerConnection,
+          imageName,
+          callback,
+          platform,
+          abortController,
+        );
       },
       tagImage(engineId: string, imageId: string, repo: string, tag: string | undefined): Promise<void> {
         return containerProviderRegistry.tagImage(engineId, imageId, repo, tag);
@@ -1717,7 +1739,7 @@ export class ExtensionLoader {
 
     const extension = this.analyzedExtensions.get(extensionId);
     if (extension) {
-      const analyzedExtension = await this.analyzeExtension(extension.path, extension.removable);
+      const analyzedExtension = await this.analyzeExtension(extension.path, extension.removable, extension.devMode);
 
       if (!analyzedExtension.error) {
         await this.loadExtension(analyzedExtension, true);
@@ -1751,16 +1773,17 @@ export class ExtensionLoader {
       // delete the path
       if (extension.removable) {
         await fs.promises.rm(extension.path, { recursive: true, force: true });
-      } else {
+      } else if (!extension.devMode) {
         throw new Error(`Extension ${extensionId} is not removable`);
       }
       this.analyzedExtensions.delete(extensionId);
+      this.extensionDevelopmentFolder.removeExternalExtensionId(extensionId);
       this.apiSender.send('extension-removed');
       this._onDidChange.fire();
     }
   }
 
-  getConfigurationRegistry(): ConfigurationRegistry {
+  getConfigurationRegistry(): IConfigurationRegistry {
     return this.configurationRegistry;
   }
 

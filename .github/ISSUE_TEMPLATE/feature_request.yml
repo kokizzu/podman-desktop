@@ -1,6 +1,7 @@
 name: Feature 💡
 description: Suggest an idea for this project
 labels: [kind/feature 💡]
+projects: ["podman-desktop/4"]
 
 body:
   - type: markdown

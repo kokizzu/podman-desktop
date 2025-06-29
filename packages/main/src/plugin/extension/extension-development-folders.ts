@@ -16,8 +16,11 @@
  * SPDX-License-Identifier: Apache-2.0
  ***********************************************************************/
 
-import type { ConfigurationRegistry, IConfigurationNode } from '/@/plugin/configuration-registry.js';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { Emitter } from '/@/plugin/events/emitter.js';
+import type { IConfigurationNode, IConfigurationRegistry } from '/@api/configuration/models.js';
 import type { ExtensionDevelopmentFolderInfo } from '/@api/extension-development-folders-info.js';
 import { ExtensionDevelopmentFolderInfoSettings } from '/@api/extension-development-folders-info.js';
 
@@ -26,7 +29,7 @@ import type { AnalyzedExtension, ExtensionAnalyzer } from './extension-analyzer.
 
 // Handle the registration / track of all development folders used when developing extensions
 export class ExtensionDevelopmentFolders {
-  #configurationRegistry: ConfigurationRegistry;
+  #configurationRegistry: IConfigurationRegistry;
 
   #apiSender: ApiSenderType;
 
@@ -35,6 +38,8 @@ export class ExtensionDevelopmentFolders {
   #developmentFolders: string[] = [];
 
   #extensionAnalyzer: ExtensionAnalyzer;
+
+  #externalExtensionIds: string[] = [];
 
   // event that will be fired
   #onDidUpdateDevelopmentFolders: Emitter<ExtensionDevelopmentFolderInfo[]> = new Emitter<
@@ -47,7 +52,7 @@ export class ExtensionDevelopmentFolders {
   onNeedToLoadExension = this.#onRequestLoadExension.event;
 
   constructor(
-    configurationRegistry: ConfigurationRegistry,
+    configurationRegistry: IConfigurationRegistry,
     extensionAnalyzer: ExtensionAnalyzer,
     apiSender: ApiSenderType,
   ) {
@@ -118,10 +123,34 @@ export class ExtensionDevelopmentFolders {
     }
 
     // before adding the path, check it's a valid extension path
-    const analyzedExtension = await this.#extensionAnalyzer.analyzeExtension(path, false);
+    const analyzedExtension = await this.#extensionAnalyzer.analyzeExtension(path, false, true);
     // if there is an error, abort
     if (analyzedExtension.error) {
       throw new Error(analyzedExtension.error);
+    }
+
+    // check if "podman-desktop" is listed as engine
+    if (analyzedExtension.manifest?.engines?.['podman-desktop'] === undefined) {
+      throw new Error(
+        `Extension with id ${analyzedExtension.id} is not compatible with Podman Desktop. It requires 'podman-desktop' engine.`,
+      );
+    }
+
+    // if there is a file, check if the file is present
+    if (
+      analyzedExtension.manifest.main &&
+      existsSync(resolve(analyzedExtension.path, analyzedExtension.manifest.main)) === false
+    ) {
+      throw new Error(
+        `Extension with id ${analyzedExtension.id} is not ready. The main file ${analyzedExtension.manifest.main} referenced by the package.json file does not exist. Maybe Extension is not built / in watch mode ?`,
+      );
+    }
+
+    // if the extension is already part of the loader, avoid the loading
+    if (this.#externalExtensionIds.includes(analyzedExtension.id)) {
+      throw new Error(
+        `Extension with id ${analyzedExtension.id} is already loaded globally. It cannot be added as a development folder.`,
+      );
     }
 
     this.#developmentFolders.push(path);
@@ -146,5 +175,14 @@ export class ExtensionDevelopmentFolders {
 
   getDevelopmentFolders(): ExtensionDevelopmentFolderInfo[] {
     return this.#developmentFolders.map(path => ({ path }));
+  }
+
+  addExternalExtensionId(extensionId: string): void {
+    if (!this.#externalExtensionIds.includes(extensionId)) {
+      this.#externalExtensionIds.push(extensionId);
+    }
+  }
+  removeExternalExtensionId(extensionId: string): void {
+    this.#externalExtensionIds = this.#externalExtensionIds.filter(id => id !== extensionId);
   }
 }

@@ -128,6 +128,8 @@ jobs:
   build:
     name: Build / ${{ matrix.os }} ${{ matrix.airgap == 'true' && '(Air Gap)' || ''  }}
     needs: tag
+    permissions:
+      contents: write
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -196,7 +198,7 @@ jobs:
           echo "AZURE_KEY_VAULT_TENANT_ID=${{secrets.AZURE_KEY_VAULT_TENANT_ID}}" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "AZURE_KEY_VAULT_URL=${{secrets.AZURE_KEY_VAULT_URL}}" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Run Build
+      - name: Build & Publish artifacts
         timeout-minutes: 40
         env:
           AIRGAP_DOWNLOAD: ${{ matrix.airgap == 'true' && '1' || ''  }}
@@ -301,7 +303,7 @@ jobs:
           tar -czf store-cache-pnpm-${{ matrix.arch }}.tgz pnpm-store
 
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2
+        uses: svenstaro/upload-release-action@ebd922b779f285dafcac6410a0710daee9c12b82 # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: store-cache-pnpm-${{ matrix.arch }}.tgz

@@ -9,7 +9,6 @@ interface Props {
   subtitle?: string;
   breadcrumbLeftPart?: string;
   breadcrumbRightPart?: string;
-  breadcrumbTitle?: string;
   onclose?: () => void;
   onbreadcrumbClick?: () => void;
   contentSnippet?: Snippet;
@@ -26,13 +25,12 @@ const {
   subtitle = undefined,
   breadcrumbLeftPart = undefined,
   breadcrumbRightPart = undefined,
-  breadcrumbTitle = '',
   onclose = (): void => {},
   onbreadcrumbClick = (): void => {},
   contentSnippet,
   tabsSnippet,
   iconSnippet,
-  subtitleSnippet,
+  subtitleSnippet: thisSubtitleSnippet,
   actionsSnippet,
   detailSnippet,
 }: Props = $props();
@@ -44,25 +42,28 @@ const {
   subtitle={subtitle}
   breadcrumbLeftPart={breadcrumbLeftPart}
   breadcrumbRightPart={breadcrumbRightPart}
-  breadcrumbTitle={breadcrumbTitle}
   onclose={onclose}
   onbreadcrumbClick={onbreadcrumbClick}>
-  <div slot="content" class="h-full bg-[var(--pd-details-bg)] min-h-0">
-    {@render contentSnippet?.()}
-  </div>
-  <div slot="tabs" class="flex flex-row px-2">
-    {@render tabsSnippet?.()}
-  </div>
-  <svelte:fragment slot="icon">
+  {#snippet content()}
+    <div class="h-full bg-[var(--pd-details-bg)] min-h-0">
+      {@render contentSnippet?.()}
+    </div>
+  {/snippet}
+  {#snippet tabs()}
+    <div class="flex flex-row px-2">
+      {@render tabsSnippet?.()}
+    </div>
+  {/snippet}
+  {#snippet icon()}
     {@render iconSnippet?.()}
-  </svelte:fragment>
-  <svelte:fragment slot="subtitle">
-    {@render subtitleSnippet?.()}
-  </svelte:fragment>
-  <svelte:fragment slot="actions">
+  {/snippet}
+  {#snippet subtitleSnippet()}
+    {@render thisSubtitleSnippet?.()}
+  {/snippet}
+  {#snippet actions()}
     {@render actionsSnippet?.()}
-  </svelte:fragment>
-  <svelte:fragment slot="detail">
+  {/snippet}
+  {#snippet detail()}
     {@render detailSnippet?.()}
-  </svelte:fragment>
+  {/snippet}
 </Page>

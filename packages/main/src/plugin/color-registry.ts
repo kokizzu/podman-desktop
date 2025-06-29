@@ -599,6 +599,11 @@ export class ColorRegistry {
       dark: colorPalette.dustypurple[700],
       light: colorPalette.purple[600],
     });
+
+    this.registerColor(`${ct}table-border`, {
+      dark: colorPalette.charcoal[400],
+      light: colorPalette.gray[300],
+    });
   }
 
   // input boxes
@@ -1515,6 +1520,10 @@ export class ColorRegistry {
     this.registerColor(`${badge}dd-extension-bg`, {
       dark: colorPalette.sky[600],
       light: colorPalette.sky[600],
+    });
+    this.registerColor(`${badge}devmode-extension-bg`, {
+      dark: colorPalette.dustypurple[600],
+      light: colorPalette.dustypurple[600],
     });
     this.registerColor(`${badge}dd-extension-text`, {
       dark: colorPalette.white,

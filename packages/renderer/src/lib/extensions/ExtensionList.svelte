@@ -11,6 +11,7 @@ import { featuredExtensionInfos } from '/@/stores/featuredExtensions';
 
 import type { CatalogExtensionInfoUI } from './catalog-extension-info-ui';
 import CatalogExtensionList from './CatalogExtensionList.svelte';
+import DevelopmentExtensionList from './dev-mode/DevelopmentExtensionList.svelte';
 import { ExtensionsUtils } from './extensions-utils';
 import InstallManuallyExtensionModal from './InstallManuallyExtensionModal.svelte';
 
@@ -29,7 +30,9 @@ const filteredInstalledExtensions: Readable<CombinedExtensionInfoUI[]> = derived
   [combinedInstalledExtensions, combinedInstalledExtensionSearchPattern],
   ([$combinedInstalledExtensions, $combinedInstalledExtensionSearchPattern]) => {
     return $combinedInstalledExtensions.filter(extension => {
-      return extension.displayName.toLowerCase().includes($combinedInstalledExtensionSearchPattern.toLowerCase());
+      return `${extension.displayName} ${extension.description}`
+        .toLowerCase()
+        .includes($combinedInstalledExtensionSearchPattern.toLowerCase());
     });
   },
 );
@@ -53,7 +56,9 @@ const filteredCatalogExtensions: Readable<CatalogExtensionInfoUI[]> = derived(
   [enhancedCatalogExtensions, catalogExtensionSearchPattern],
   ([$enhancedCatalogExtensions, $catalogExtensionSearchPattern]) => {
     return $enhancedCatalogExtensions.filter(extension => {
-      return extension.displayName.toLowerCase().includes($catalogExtensionSearchPattern.toLowerCase());
+      return `${extension.displayName} ${extension.shortDescription}`
+        .toLowerCase()
+        .includes($catalogExtensionSearchPattern.toLowerCase());
     });
   },
 );
@@ -62,13 +67,13 @@ function closeModal(): void {
   installManualImageModal = false;
 }
 
-let screen: 'installed' | 'catalog' = 'installed';
+let screen: 'installed' | 'catalog' | 'development' = 'installed';
 
 let installManualImageModal: boolean = false;
 </script>
 
 <NavPage bind:searchTerm={searchTerm} title="extensions">
-  <svelte:fragment slot="additional-actions">
+  {#snippet additionalActions()}
     <Button
       on:click={(): void => {
         installManualImageModal = true;
@@ -76,9 +81,9 @@ let installManualImageModal: boolean = false;
       icon={faCloudDownload}
       title="Install manually an extension"
       aria-label="Install custom">Install custom...</Button>
-  </svelte:fragment>
+  {/snippet}
 
-  <svelte:fragment slot="bottom-additional-actions">
+  {#snippet bottomAdditionalActions()}
     <!-- display filter out items-->
     {#if filteredInstalledItems > 0 && screen === 'installed'}
       <div class="text-sm text-[var(--pd-content-text)]">
@@ -89,9 +94,9 @@ let installManualImageModal: boolean = false;
         Filtered out {filteredCatalogItems} items of {$enhancedCatalogExtensions.length}
       </div>
     {/if}
-  </svelte:fragment>
+  {/snippet}
 
-  <svelte:fragment slot="tabs">
+  {#snippet tabs()}
     <Button
       type="tab"
       on:click={(): void => {
@@ -104,9 +109,16 @@ let installManualImageModal: boolean = false;
         screen = 'catalog';
       }}
       selected={screen === 'catalog'}>Catalog</Button>
-  </svelte:fragment>
+      <Button
+      type="tab"
+      on:click={(): void => {
+        screen = 'development';
+      }}
+      selected={screen === 'development'}>Local Extensions</Button>
+ {/snippet}
 
-  <div class="flex min-w-full h-full" slot="content">
+  {#snippet content()}
+  <div class="flex min-w-full h-full">
     {#if screen === 'installed'}
       {#if searchTerm && $filteredInstalledExtensions.length === 0}
         <FilteredEmptyScreen
@@ -116,7 +128,7 @@ let installManualImageModal: boolean = false;
           on:resetFilter={(): string => (searchTerm = '')} />
       {/if}
       <InstalledExtensionList extensionInfos={$filteredInstalledExtensions} />
-    {:else}
+    {:else if screen === 'catalog'}
       {#if searchTerm && $filteredCatalogExtensions.length === 0}
         <FilteredEmptyScreen
           icon={ExtensionIcon}
@@ -125,8 +137,11 @@ let installManualImageModal: boolean = false;
           on:resetFilter={(): string => (searchTerm = '')} />
       {/if}
       <CatalogExtensionList showEmptyScreen={!searchTerm} catalogExtensions={$filteredCatalogExtensions} />
+    {:else if screen === 'development'}
+      <DevelopmentExtensionList />
     {/if}
   </div>
+  {/snippet}
 </NavPage>
 
 {#if installManualImageModal}

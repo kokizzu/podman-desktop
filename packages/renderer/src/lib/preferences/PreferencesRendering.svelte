@@ -4,8 +4,8 @@ import { onDestroy, onMount } from 'svelte';
 import { type Unsubscriber } from 'svelte/store';
 
 import { context } from '/@/stores/context';
+import type { IConfigurationPropertyRecordedSchema } from '/@api/configuration/models.js';
 
-import type { IConfigurationPropertyRecordedSchema } from '../../../../main/src/plugin/configuration-registry';
 import Route from '../../Route.svelte';
 import type { ContextUI } from '../context/context';
 import PreferencesRenderingItem from './PreferencesRenderingItem.svelte';
@@ -73,7 +73,7 @@ function updateSearchValue(event: any): void {
 
 <Route path="/" breadcrumb={key}>
   <SettingsPage title="Preferences">
-    <SearchInput slot="header" title="preferences" class="mt-4" on:input={updateSearchValue} />
+    <SearchInput slot="header" title="preferences" class="mt-4" oninput={updateSearchValue} />
     <div class="flex flex-col space-y-5 text-[var(--pd-content-header)]">
       {#if matchingRecords.size === 0}
         <div>No Settings Found</div>

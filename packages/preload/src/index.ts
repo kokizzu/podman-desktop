@@ -26,6 +26,7 @@ import type {
   Cluster,
   Context,
   KubernetesObject,
+  User,
   V1ConfigMap,
   V1CronJob,
   V1Deployment,
@@ -45,6 +46,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { CliToolInfo } from '/@api/cli-tool-info';
 import type { ColorInfo } from '/@api/color-info';
 import type { CommandInfo } from '/@api/command-info';
+import type { IConfigurationPropertyRecordedSchema } from '/@api/configuration/models';
 import type {
   ContainerCreateOptions,
   ContainerExportOptions,
@@ -58,6 +60,7 @@ import type {
 import type { ContainerInspectInfo } from '/@api/container-inspect-info';
 import type { ContainerStatsInfo } from '/@api/container-stats-info';
 import type { ContributionInfo } from '/@api/contribution-info';
+import type { MessageBoxOptions, MessageBoxReturnValue } from '/@api/dialog';
 import type { DockerSocketMappingStatusInfo } from '/@api/docker-compatibility-info';
 import type { ExtensionDevelopmentFolderInfo } from '/@api/extension-development-folders-info';
 import type { ExtensionInfo } from '/@api/extension-info';
@@ -66,6 +69,7 @@ import type { HistoryInfo } from '/@api/history-info';
 import type { IconInfo } from '/@api/icon-info';
 import type { ImageCheckerInfo } from '/@api/image-checker-info';
 import type { ImageFilesInfo } from '/@api/image-files-info';
+import type { ImageFilesystemLayersUI } from '/@api/image-filesystem-layers';
 import type { ImageInfo, PodmanListImagesOptions } from '/@api/image-info';
 import type { ImageInspectInfo } from '/@api/image-inspect-info';
 import type { ImageSearchOptions, ImageSearchResult, ImageTagsListOptions } from '/@api/image-registry';
@@ -78,6 +82,7 @@ import type { ResourceCount } from '/@api/kubernetes-resource-count';
 import type { KubernetesContextResources } from '/@api/kubernetes-resources';
 import type { KubernetesTroubleshootingInformation } from '/@api/kubernetes-troubleshooting';
 import type { ManifestCreateOptions, ManifestInspectInfo, ManifestPushOptions } from '/@api/manifest-info';
+import type { Menu } from '/@api/menu.js';
 import type { NetworkInspectInfo } from '/@api/network-info';
 import type { NotificationCard, NotificationCardOptions } from '/@api/notification';
 import type { OnboardingInfo, OnboardingStatus } from '/@api/onboarding';
@@ -93,6 +98,7 @@ import type {
 import type { ProxyState } from '/@api/proxy';
 import type { PullEvent } from '/@api/pull-event';
 import type { ReleaseNotesInfo } from '/@api/release-notes-info';
+import type { StatusBarEntryDescriptor } from '/@api/status-bar';
 import type { PinOption } from '/@api/status-bar/pin-option';
 import type { ViewInfoUI } from '/@api/view-info';
 import type { VolumeInspectInfo, VolumeListInfo } from '/@api/volume-info';
@@ -103,7 +109,6 @@ import type { ContextInfo } from '../../main/src/plugin/api/context-info';
 import type { KubernetesGeneratorInfo } from '../../main/src/plugin/api/KubernetesGeneratorInfo';
 import type { PodCreateOptions, PodInfo, PodInspectInfo } from '../../main/src/plugin/api/pod-info';
 import type { AuthenticationProviderInfo } from '../../main/src/plugin/authentication';
-import type { IConfigurationPropertyRecordedSchema } from '../../main/src/plugin/configuration-registry';
 import type {
   ContainerCreateOptions as PodmanContainerCreateOptions,
   PlayKubeInfo,
@@ -116,10 +121,7 @@ import type {
   KubernetesGeneratorSelector,
 } from '../../main/src/plugin/kubernetes/kube-generator-registry';
 import type { Guide } from '../../main/src/plugin/learning-center/learning-center-api';
-import type { Menu } from '../../main/src/plugin/menu-registry';
-import type { MessageBoxOptions, MessageBoxReturnValue } from '../../main/src/plugin/message-box';
 import type { ExtensionBanner, RecommendedRegistry } from '../../main/src/plugin/recommendations/recommendations-api';
-import type { StatusBarEntryDescriptor } from '../../main/src/plugin/statusbar/statusbar-registry';
 import type { IDisposable } from '../../main/src/plugin/types/disposable';
 import { Deferred } from './util/deferred';
 
@@ -537,6 +539,7 @@ export function initExposure(): void {
       engineId: string;
       containerId: string;
       callback: (name: string, data: string) => void;
+      cancellableTokenId?: number;
     }): Promise<void> => {
       onDataCallbacksLogsContainerId++;
       onDataCallbacksLogsContainer.set(onDataCallbacksLogsContainerId, logsParams.callback);
@@ -544,6 +547,7 @@ export function initExposure(): void {
         engineId: logsParams.engineId,
         containerId: logsParams.containerId,
         onDataId: onDataCallbacksLogsContainerId,
+        cancellableTokenId: logsParams.cancellableTokenId,
       });
     },
   );
@@ -1242,6 +1246,7 @@ export function initExposure(): void {
       eventCollect: (key: symbol, eventName: 'finish' | 'stream' | 'error', data: string) => void,
       cancellableTokenId?: number,
       buildargs?: { [key: string]: string },
+      taskId?: number,
     ): Promise<unknown> => {
       onDataCallbacksBuildImageId++;
       onDataCallbacksBuildImage.set(onDataCallbacksBuildImageId, eventCollect);
@@ -1256,6 +1261,7 @@ export function initExposure(): void {
         onDataCallbacksBuildImageId,
         cancellableTokenId,
         buildargs,
+        taskId,
       );
     },
   );
@@ -1563,6 +1569,10 @@ export function initExposure(): void {
 
   contextBridge.exposeInMainWorld('removeExtension', async (extensionId: string): Promise<void> => {
     return ipcInvoke('extension-loader:removeExtension', extensionId);
+  });
+
+  contextBridge.exposeInMainWorld('ensureExtensionIsEnabled', async (extensionId: string): Promise<void> => {
+    return ipcInvoke('extension-loader:ensureExtensionIsEnabled', extensionId);
   });
 
   contextBridge.exposeInMainWorld('openExternal', async (link: string): Promise<void> => {
@@ -1877,8 +1887,21 @@ export function initExposure(): void {
   });
   contextBridge.exposeInMainWorld(
     'kubernetesUpdateContext',
-    async (contextName: string, newContextName: string, newContextNamespace: string): Promise<void> => {
-      return ipcInvoke('kubernetes-client:updateContext', contextName, newContextName, newContextNamespace);
+    async (
+      contextName: string,
+      newContextName: string,
+      newContextNamespace: string,
+      newContextCluster: string,
+      newContextUser: string,
+    ): Promise<void> => {
+      return ipcInvoke(
+        'kubernetes-client:updateContext',
+        contextName,
+        newContextName,
+        newContextNamespace,
+        newContextCluster,
+        newContextUser,
+      );
     },
   );
   contextBridge.exposeInMainWorld('kubernetesDeleteContext', async (contextName: string): Promise<Context[]> => {
@@ -1934,6 +1957,10 @@ export function initExposure(): void {
 
   contextBridge.exposeInMainWorld('kubernetesGetClusters', async (): Promise<Cluster[]> => {
     return ipcInvoke('kubernetes-client:getClusters');
+  });
+
+  contextBridge.exposeInMainWorld('kubernetesGetUsers', async (): Promise<User[]> => {
+    return ipcInvoke('kubernetes-client:getUsers');
   });
 
   contextBridge.exposeInMainWorld('kubernetesGetCurrentNamespace', async (): Promise<string | undefined> => {
@@ -2429,7 +2456,7 @@ export function initExposure(): void {
       id: string,
       image: containerDesktopAPI.ImageInfo,
       cancellationToken?: number,
-    ): Promise<containerDesktopAPI.ImageFilesystemLayers | undefined> => {
+    ): Promise<ImageFilesystemLayersUI | undefined> => {
       return ipcInvoke('image-files:getFilesystemLayers', id, image, cancellationToken);
     },
   );

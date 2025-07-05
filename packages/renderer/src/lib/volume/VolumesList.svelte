@@ -127,7 +127,6 @@ function gotoCreateVolume(): void {
 }
 
 let selectedItemsNumber: number;
-let table: Table;
 
 let statusColumn = new TableColumn<VolumeInfoUI>('Status', {
   align: 'center',
@@ -177,7 +176,7 @@ const row = new TableRow<VolumeInfoUI>({
 </script>
 
 <NavPage bind:searchTerm={searchTerm} title="volumes">
-  <svelte:fragment slot="additional-actions">
+  {#snippet additionalActions()}
     {#if $volumeListInfos.map(volumeInfo => volumeInfo.Volumes).flat().length > 0}
       <Prune type="volumes" engines={enginesList} />
 
@@ -192,9 +191,9 @@ const row = new TableRow<VolumeInfoUI>({
       <Button on:click={gotoCreateVolume} icon={faPlusCircle} title="Create a volume" aria-label="Create"
         >Create</Button>
     {/if}
-  </svelte:fragment>
+  {/snippet}
 
-  <svelte:fragment slot="bottom-additional-actions">
+  {#snippet bottomAdditionalActions()}
     {#if selectedItemsNumber > 0}
       <Button
         on:click={(): void =>
@@ -207,19 +206,10 @@ const row = new TableRow<VolumeInfoUI>({
         icon={faTrash} />
       <span>On {selectedItemsNumber} selected items.</span>
     {/if}
-  </svelte:fragment>
+  {/snippet}
 
-  <div class="flex min-w-full h-full" slot="content">
-    <Table
-      kind="volume"
-      bind:this={table}
-      bind:selectedItemsNumber={selectedItemsNumber}
-      data={volumes}
-      columns={columns}
-      row={row}
-      defaultSortColumn="Name"
-      on:update={(): VolumeInfoUI[] => (volumes = volumes)}>
-    </Table>
+  {#snippet content()}
+  <div class="flex min-w-full h-full">
 
     {#if providerConnections.length === 0}
       <NoContainerEngineEmptyScreen />
@@ -229,6 +219,17 @@ const row = new TableRow<VolumeInfoUI>({
       {:else}
         <VolumeEmptyScreen />
       {/if}
+    {:else}
+      <Table
+        kind="volume"
+        bind:selectedItemsNumber={selectedItemsNumber}
+        data={volumes}
+        columns={columns}
+        row={row}
+        defaultSortColumn="Name"
+        on:update={(): VolumeInfoUI[] => (volumes = volumes)}>
+      </Table>
     {/if}
   </div>
+  {/snippet}
 </NavPage>

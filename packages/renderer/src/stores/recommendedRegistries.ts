@@ -19,7 +19,8 @@
 import { type Writable, writable } from 'svelte/store';
 
 import type { RecommendedRegistry } from '../../../main/src/plugin/recommendations/recommendations-api';
-import { EventStore } from './event-store';
+import { RecommendationsSettings } from '../../../main/src/plugin/recommendations/recommendations-settings.js';
+import { EventStore, fineGrainedEvents } from './event-store';
 
 let readyToUpdate = false;
 
@@ -30,7 +31,9 @@ const windowEvents = [
   'extension-stopped',
   'extension-removed',
   'extensions-started',
-  'configuration-changed', // Required to capture the ignoreRecommendations preference change
+  fineGrainedEvents('configuration-changed', [
+    `${RecommendationsSettings.SectionName}.${RecommendationsSettings.IgnoreRecommendations}`,
+  ]),
 ];
 const windowListeners = ['extensions-already-started'];
 

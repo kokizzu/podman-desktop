@@ -115,7 +115,6 @@ async function openKubePods(): Promise<void> {
 }
 
 let selectedItemsNumber: number = $state(0);
-let table: Table;
 
 let statusColumn = new TableColumn<PodInfoUI>('Status', {
   align: 'center',
@@ -157,16 +156,16 @@ const row = new TableRow<PodInfoUI>({ selectable: (_pod): boolean => true });
 </script>
 
 <NavPage bind:searchTerm={searchTerm} title="pods">
-  <svelte:fragment slot="additional-actions">
+  {#snippet additionalActions()}
     {#if $podsInfos.length > 0}
       <Prune type="pods" engines={enginesList} />
     {/if}
     {#if providerPodmanConnections.length > 0}
       <KubePlayButton />
     {/if}
-  </svelte:fragment>
+  {/snippet}
 
-  <svelte:fragment slot="bottom-additional-actions">
+  {#snippet bottomAdditionalActions()}
     {#if selectedItemsNumber > 0}
       <Button
         on:click={(): void =>
@@ -179,9 +178,9 @@ const row = new TableRow<PodInfoUI>({ selectable: (_pod): boolean => true });
         icon={faTrash} />
       <span>On {selectedItemsNumber} selected items.</span>
     {/if}
-  </svelte:fragment>
+  {/snippet}
 
-  <svelte:fragment slot="tabs">
+  {#snippet tabs()}
     <div class="flex flex-col gap-3">
       <div class="self-center text-[var(--pd-table-body-text)]">Looking for pods running on a Kubernetes cluster? We have moved them to the <Link on:click={openKubePods}>Kubernetes &gt; Pods</Link> page.</div>
 
@@ -221,21 +220,12 @@ const row = new TableRow<PodInfoUI>({ selectable: (_pod): boolean => true });
           selected={searchTerm.includes('is:stopped')}>Stopped</Button>
       </div>
     </div>
-  </svelte:fragment>
+  {/snippet}
 
-  <div class="flex min-w-full h-full" slot="content">
-    <Table
-      kind="pod"
-      bind:this={table}
-      bind:selectedItemsNumber={selectedItemsNumber}
-      data={pods}
-      columns={columns}
-      row={row}
-      defaultSortColumn="Name"
-      on:update={(): PodInfoUI[] => (pods = pods)}>
-    </Table>
+  {#snippet content()}
+  <div class="flex min-w-full h-full">
 
-    {#if $filtered.length === 0 && providerConnections.length === 0}
+    {#if providerConnections.length === 0}
       <NoContainerEngineEmptyScreen />
     {:else if $filtered.length === 0}
       {#if searchTerm}
@@ -250,6 +240,17 @@ const row = new TableRow<PodInfoUI>({ selectable: (_pod): boolean => true });
       {:else}
         <PodEmptyScreen />
       {/if}
+    {:else}
+      <Table
+        kind="pod"
+        bind:selectedItemsNumber={selectedItemsNumber}
+        data={pods}
+        columns={columns}
+        row={row}
+        defaultSortColumn="Name"
+        on:update={(): PodInfoUI[] => (pods = pods)}>
+      </Table>
     {/if}
   </div>
+  {/snippet}
 </NavPage>

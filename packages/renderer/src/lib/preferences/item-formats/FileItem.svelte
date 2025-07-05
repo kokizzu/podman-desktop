@@ -2,8 +2,7 @@
 import type { OpenDialogOptions } from '@podman-desktop/api';
 
 import FileInput from '/@/lib/ui/FileInput.svelte';
-
-import type { IConfigurationPropertyRecordedSchema } from '../../../../../main/src/plugin/configuration-registry';
+import type { IConfigurationPropertyRecordedSchema } from '/@api/configuration/models.js';
 
 export let record: IConfigurationPropertyRecordedSchema;
 export let value: string = '';
@@ -29,6 +28,7 @@ function onChangeFileInput(value: string): void {
     bind:value={value}
     onChange={onChangeFileInput}
     readonly={record.readonly ?? true}
+    clearable={true}
     placeholder={record.placeholder}
     options={dialogOptions}
     aria-invalid={invalidEntry}

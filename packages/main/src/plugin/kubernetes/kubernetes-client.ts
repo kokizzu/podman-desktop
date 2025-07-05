@@ -29,6 +29,7 @@ import type {
   KubernetesObject,
   RequestContext,
   ResponseContext,
+  User,
   V1APIGroup,
   V1APIResource,
   V1ConfigMap,
@@ -65,6 +66,7 @@ import {
 } from '@kubernetes/client-node';
 import { PromiseMiddlewareWrapper } from '@kubernetes/client-node/dist/gen/middleware.js';
 import type * as containerDesktopAPI from '@podman-desktop/api';
+import { inject, injectable } from 'inversify';
 import * as jsYaml from 'js-yaml';
 import type { WebSocket } from 'ws';
 import type { Tags } from 'yaml';
@@ -72,6 +74,7 @@ import { parseAllDocuments } from 'yaml';
 
 import type { KubernetesPortForwardService } from '/@/plugin/kubernetes/kubernetes-port-forward-service.js';
 import { KubernetesPortForwardServiceProvider } from '/@/plugin/kubernetes/kubernetes-port-forward-service.js';
+import { type IConfigurationNode, IConfigurationRegistry } from '/@api/configuration/models.js';
 import type { KubeContext } from '/@api/kubernetes-context.js';
 import type { ContextHealth } from '/@api/kubernetes-contexts-healths.js';
 import type { ContextPermission } from '/@api/kubernetes-contexts-permissions.js';
@@ -82,11 +85,10 @@ import type { KubernetesContextResources } from '/@api/kubernetes-resources.js';
 import type { KubernetesTroubleshootingInformation } from '/@api/kubernetes-troubleshooting.js';
 import type { V1Route } from '/@api/openshift-types.js';
 
-import type { ApiSenderType } from '../api.js';
-import type { ConfigurationRegistry, IConfigurationNode } from '../configuration-registry.js';
+import { ApiSenderType } from '../api.js';
 import { Emitter } from '../events/emitter.js';
-import type { FilesystemMonitoring } from '../filesystem-monitoring.js';
-import type { Telemetry } from '../telemetry/telemetry.js';
+import { FilesystemMonitoring } from '../filesystem-monitoring.js';
+import { Telemetry } from '../telemetry/telemetry.js';
 import { Uri } from '../types/uri.js';
 import { ContextsManager } from './contexts-manager.js';
 import { ContextsManagerExperimental } from './contexts-manager-experimental.js';
@@ -126,6 +128,7 @@ function isV1ObjectMetaWithName(m: unknown): m is V1ObjectMetaWithName {
 interface KubernetesObjectWithKindAndName extends KubernetesObject {
   kind: string;
   metadata: V1ObjectMetaWithName;
+  status?: V1Status;
 }
 
 function isKubernetesObjectWithKindAndName(o: unknown): o is KubernetesObjectWithKindAndName {
@@ -147,6 +150,15 @@ function isScalableControllerType(string: unknown): string is ScalableController
   return typeof string === 'string' && SCALABLE_CONTROLLER_TYPES.includes(string);
 }
 
+function sanitizeMetadata(spec: KubernetesObjectWithKindAndName): void {
+  delete spec.metadata?.resourceVersion;
+  delete spec.metadata?.uid;
+  delete spec.metadata?.selfLink;
+  delete spec.metadata?.creationTimestamp;
+  delete spec.metadata?.managedFields;
+  delete spec.status; // status is usually updated by the system, ignore it
+}
+
 export interface PodCreationSource {
   isManuallyCreated: boolean;
   controllerType: ControllerType;
@@ -155,6 +167,7 @@ export interface PodCreationSource {
 /**
  * Handle calls to kubernetes API
  */
+@injectable()
 export class KubernetesClient {
   protected kubeConfig;
 
@@ -193,9 +206,13 @@ export class KubernetesClient {
   > = new Map();
 
   constructor(
+    @inject(ApiSenderType)
     private readonly apiSender: ApiSenderType,
-    private readonly configurationRegistry: ConfigurationRegistry,
+    @inject(IConfigurationRegistry)
+    private readonly configurationRegistry: IConfigurationRegistry,
+    @inject(FilesystemMonitoring)
     private readonly fileSystemMonitoring: FilesystemMonitoring,
+    @inject(Telemetry)
     private readonly telemetry: Telemetry,
   ) {
     this.kubeConfig = new KubeConfig();
@@ -261,8 +278,8 @@ export class KubernetesClient {
         if (!val?.trim()) {
           val = defaultKubeconfigPath;
         }
-        this.setupWatcher(val);
         await this.setKubeconfig(Uri.file(val));
+        this.setupWatcher(val);
       }
     });
   }
@@ -278,6 +295,17 @@ export class KubernetesClient {
     this.kubeConfigWatcher = this.fileSystemMonitoring.createFileSystemWatcher(kubeconfigFile);
 
     const location = Uri.file(kubeconfigFile);
+    const notifyKubeConfigExist = async (): Promise<void> => {
+      await this.refresh();
+      this._onDidUpdateKubeconfig.fire({ type: 'CREATE', location });
+      this.apiSender.send('kubernetes-context-update');
+    };
+
+    if (fs.existsSync(kubeconfigFile)) {
+      notifyKubeConfigExist().catch((error: unknown) => {
+        console.error('Error while checking kubeconfig', error);
+      });
+    }
 
     // needs to refresh
     this.kubeConfigWatcher.onDidChange(async () => {
@@ -287,9 +315,7 @@ export class KubernetesClient {
     });
 
     this.kubeConfigWatcher.onDidCreate(async () => {
-      await this.refresh();
-      this._onDidUpdateKubeconfig.fire({ type: 'CREATE', location });
-      this.apiSender.send('kubernetes-context-update');
+      await notifyKubeConfigExist();
     });
 
     this.kubeConfigWatcher.onDidDelete(() => {
@@ -329,6 +355,10 @@ export class KubernetesClient {
 
   getClusters(): Cluster[] {
     return this.kubeConfig.clusters;
+  }
+
+  getUsers(): User[] {
+    return this.kubeConfig.users;
   }
 
   getCurrentNamespace(): string | undefined {
@@ -403,7 +433,13 @@ export class KubernetesClient {
     this.apiSender.send('kubernetes-context-update');
   }
 
-  async updateContext(contextName: string, newContextName: string, newContextNamespace: string): Promise<void> {
+  async updateContext(
+    contextName: string,
+    newContextName: string,
+    newContextNamespace: string,
+    newContextCluster: string,
+    newContextUser: string,
+  ): Promise<void> {
     const newConfig = new KubeConfig();
 
     const originalContext = this.kubeConfig.contexts.find(context => context.name === contextName);
@@ -415,6 +451,8 @@ export class KubernetesClient {
     const editedContext = {
       ...originalContext,
       name: newContextName,
+      cluster: newContextCluster,
+      user: newContextUser,
       ...namespaceField,
     };
 
@@ -1303,6 +1341,15 @@ export class KubernetesClient {
         spec.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration'] = JSON.stringify(spec);
 
         spec.metadata.namespace ??= namespace ?? DEFAULT_NAMESPACE;
+
+        // When patching a resource or creating a new one, we do not need certain metadata fields to be present such as resourceVersion, uid, selfLink, and creationTimestamp
+        // these cause conflicts when patching a resource since client.patch will serialize these fields and the server will reject the request
+        // this change is due to changes on how client.patch / client.create works with the latest serialization changes in:
+        // https://github.com/kubernetes-client/javascript/pull/1695 with regards to date
+        // we also remove resourceVersion so we may apply multiple edits to the same resource without having to entirely retrieve and reload the YAML
+        // from the server before applying.
+        sanitizeMetadata(spec);
+
         try {
           // try to get the resource, if it does not exist an error will be thrown and we will
           // end up in the catch block
@@ -1314,17 +1361,6 @@ export class KubernetesClient {
           //
           // See: https://github.com/kubernetes/kubernetes/issues/97423
           if (action === 'apply') {
-            // When patching a resource, we do not need certain metadata fields to be present such as resourceVersion, uid, selfLink, and creationTimestamp
-            // these cause conflicts when patching a resource since client.patch will serialize these fields and the server will reject the request
-            // this change is due to changes on how client.patch / client.create works with the latest serialization changes in:
-            // https://github.com/kubernetes-client/javascript/pull/1695 with regards to date.
-            // we also remove resourceVersion so we may apply multiple edits to the same resource without having to entirely retrieve and reload the YAML
-            // from the server before applying.
-            delete spec.metadata?.resourceVersion;
-            delete spec.metadata?.uid;
-            delete spec.metadata?.selfLink;
-            delete spec.metadata?.creationTimestamp;
-
             const response = await client.patch(
               spec,
               undefined /* pretty */,
@@ -1407,7 +1443,6 @@ export class KubernetesClient {
         onClose();
       });
     } else {
-      let telemetryOptions = {};
       try {
         const ns = this.getCurrentNamespace();
         const connected = await this.checkConnection();
@@ -1448,10 +1483,7 @@ export class KubernetesClient {
         });
         this.#execs.set(`${podName}-${containerName}`, { stdin, stdout, stderr, conn });
       } catch (error) {
-        telemetryOptions = { error: error };
         throw this.wrapK8sClientError(error);
-      } finally {
-        this.telemetry.track('kubernetesExecIntoContainer', telemetryOptions);
       }
     }
 

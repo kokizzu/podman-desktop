@@ -24,6 +24,7 @@ import test, { expect as playExpect } from '@playwright/test';
 import { ResourceElementActions } from '../model/core/operations';
 import { ResourceElementState } from '../model/core/states';
 import { CLIToolsPage } from '../model/pages/cli-tools-page';
+import { ExperimentalPage } from '../model/pages/experimental-page';
 import { PreferencesPage } from '../model/pages/preferences-page';
 import { RegistriesPage } from '../model/pages/registries-page';
 import { ResourceConnectionCardPage } from '../model/pages/resource-connection-card-page';
@@ -357,6 +358,12 @@ export async function deletePodmanMachineFromCLI(podmanMachineName: string): Pro
   });
 }
 
+export async function resetPodmanMachinesFromCLI(): Promise<void> {
+  return test.step('Reset Podman machine from CLI', () => {
+    execSync(`podman machine reset -f`);
+  });
+}
+
 export async function fillTextbox(textbox: Locator, text: string): Promise<void> {
   return test.step(`Fill textbox with ${text}`, async () => {
     await playExpect(textbox).toBeVisible({ timeout: 15_000 });
@@ -435,4 +442,15 @@ export async function setDockerCompatibilityFeature(page: Page, enable: boolean)
 
   //Close the preferences bar
   await settingsBar.expandPreferencesTab();
+}
+
+export async function setStatusBarProvidersFeature(
+  page: Page,
+  navigationBar: NavigationBar,
+  enable: boolean,
+): Promise<void> {
+  await navigationBar.openSettings();
+  const settingsBar = new SettingsBar(page);
+  const experimentalPage = await settingsBar.openTabPage(ExperimentalPage);
+  await experimentalPage.setExperimentalCheckbox(experimentalPage.statusBarProvidersCheckbox, enable);
 }

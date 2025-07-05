@@ -18,6 +18,8 @@ Make sure you have:
 
 - A [running Podman machine](/docs/podman/creating-a-podman-machine).
 - A running Kubernetes cluster, such as [Kind](/docs/kind/creating-a-kind-cluster) or [Minikube](/docs/minikube/creating-a-minikube-cluster).
+- Connected to the cluster.
+  - Go to **Settings > Kubernetes**, and click **Connect** in the cluster tile.
 - Created a YAML configuration file with an exposed port:
 
 ```yaml
@@ -38,7 +40,6 @@ spec:
 #### Procedure: Start port forwarding
 
 1. Create a Kubernetes pod:
-
    1. Go to the **Pods** component page.
    1. Click **Play Kubernetes YAML**.
       ![play kubernetes yaml](img/play-kubernetes-yaml.png)

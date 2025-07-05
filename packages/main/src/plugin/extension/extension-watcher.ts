@@ -16,18 +16,21 @@
  * SPDX-License-Identifier: Apache-2.0
  ***********************************************************************/
 
-import type { FileSystemWatcher } from '@podman-desktop/api';
+import type { FileSystemWatcher, Uri } from '@podman-desktop/api';
 import type { FileMatcher } from 'get-tsconfig';
+import { inject, injectable } from 'inversify';
 
-import type { Event } from '../events/emitter.js';
+import type { Event } from '/@api/event.js';
+
 import { Emitter } from '../events/emitter.js';
-import type { FilesystemMonitoring } from '../filesystem-monitoring.js';
+import { FilesystemMonitoring } from '../filesystem-monitoring.js';
 import type { IDisposable } from '../types/disposable.js';
 import type { AnalyzedExtension } from './extension-analyzer.js';
 import type { ActivatedExtension } from './extension-loader.js';
 import { ExtensionTypeScriptConfigParser } from './extension-tsconfig-parser.js';
 
 // In charge of watching the extension and reloading it when it changes
+@injectable()
 export class ExtensionWatcher implements IDisposable {
   #watcherExtensions: Map<string, FileSystemWatcher>;
 
@@ -38,7 +41,7 @@ export class ExtensionWatcher implements IDisposable {
   #onNeedToReloadExtension = new Emitter<AnalyzedExtension>();
   readonly onNeedToReloadExtension: Event<AnalyzedExtension> = this.#onNeedToReloadExtension.event;
 
-  constructor(fileSystemMonitoring: FilesystemMonitoring) {
+  constructor(@inject(FilesystemMonitoring) fileSystemMonitoring: FilesystemMonitoring) {
     this.#fileSystemMonitoring = fileSystemMonitoring;
     this.#watcherExtensions = new Map<string, FileSystemWatcher>();
     this.#reloadExtensionTimeouts = new Map<string, NodeJS.Timeout>();
@@ -83,9 +86,9 @@ export class ExtensionWatcher implements IDisposable {
     const extensionWatcher = this.#fileSystemMonitoring.createFileSystemWatcher(extension.path);
     this.#watcherExtensions.set(extension.id, extensionWatcher);
 
-    extensionWatcher.onDidChange(async event => {
-      // check if it's matching the source pattern of an existing typescript config
+    const callback = (event: Uri): void => {
       let isInSource = false;
+      // check if it's matching the source pattern of an existing typescript config
       const hasTsConfig = tsConfigFileMatcher !== undefined;
       if (tsConfigFileMatcher) {
         const matchingJsonEvent = tsConfigFileMatcher(event.fsPath);
@@ -95,7 +98,11 @@ export class ExtensionWatcher implements IDisposable {
       if (!hasTsConfig || !isInSource) {
         this.reloadExtension(extension);
       }
-    });
+    };
+
+    extensionWatcher.onDidCreate(event => callback(event));
+    extensionWatcher.onDidDelete(event => callback(event));
+    extensionWatcher.onDidChange(event => callback(event));
   }
 
   protected getWatcher(extension: ActivatedExtension): FileSystemWatcher | undefined {

@@ -2,7 +2,7 @@
   "name": "lima",
   "displayName": "Lima",
   "description": "Integration for Lima: Linux Machines (typically macOS)",
-  "version": "1.19.0-next",
+  "version": "1.20.0-next",
   "icon": "icon.png",
   "publisher": "podman-desktop",
   "license": "Apache-2.0",
@@ -28,7 +28,11 @@
         "lima.type": {
           "type": "string",
           "default": "podman",
-          "enum": ["podman", "docker", "kubernetes"],
+          "enum": [
+            "podman",
+            "docker",
+            "kubernetes"
+          ],
           "description": "Engine type (requires restart of extension)"
         },
         "lima.name": {
@@ -71,7 +75,7 @@
     "adm-zip": "^0.5.16",
     "mkdirp": "^3.0.1",
     "vite": "^6.3.5",
-    "vitest": "^3.1.3",
+    "vitest": "^3.2.4",
     "tmp-promise": "^3.0.3"
   }
 }

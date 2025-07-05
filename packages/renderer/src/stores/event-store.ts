@@ -27,6 +27,8 @@ import { addStore, updateStore } from './event-store-manager';
 const SECOND = 1000;
 const DEFAULT_DEBOUNCE_TIMEOUT = 1.5 * SECOND;
 const DEFAULT_THROTTLE_TIMEOUT = 5 * SECOND;
+const EVENT_SEPARATOR = '>';
+const KEYS_SEPARATOR = ',';
 
 interface EventStoreInfoEvent {
   name: string;
@@ -43,6 +45,17 @@ interface EventStoreInfoEvent {
   humanDuration?: number;
 }
 
+interface KeyEvent {
+  key: string;
+}
+
+function isKeyEvent(value: unknown): value is KeyEvent {
+  return !!value && typeof value === 'object' && 'key' in value && typeof value.key === 'string';
+}
+
+export function fineGrainedEvents(eventName: string, keys: string[]): string {
+  return [eventName, keys.join(KEYS_SEPARATOR)].join(EVENT_SEPARATOR);
+}
 export interface EventStoreInfo {
   name: string;
 
@@ -85,6 +98,7 @@ export class EventStore<T> {
 
     // The list of window events and listeners to listen for to trigger an update, for example:
     // Window event: 'extension-started'
+    // Window event with keys: 'configuration-changed:extensions.ignoreRecommendations,ignoreBannerRecommendations'
     // Window listener: 'extensions-already-started''
     private windowEvents: string[],
     private windowListeners: string[],
@@ -94,6 +108,9 @@ export class EventStore<T> {
     // or a function with parameters such as "fetchPodsForNamespace(namespace: string)"
     // or even a simple window call such as "window.listPods()"
     // Whatever is returned from the "updater" function will be set to the writeable store above.
+    //
+    // When called for a window event with one or several keys (`eventName:key1,key2`), args[0] will contain an object
+    // with the matching `key` value (and potentially other values, depending on the eventName).
     private updater: (...args: unknown[]) => Promise<T>,
 
     // Optional icon component to display in the UI
@@ -255,11 +272,24 @@ export class EventStore<T> {
       }
     };
 
-    this.windowEvents.forEach(eventName => {
-      window.events?.receive(eventName, (args?: unknown) => {
-        update(eventName, args as unknown[]).catch((error: unknown) => {
-          console.error(`Failed to update ${this.name}`, error);
-        });
+    this.windowEvents.forEach(eventNameWithOptionalKeys => {
+      const [eventName, keysList] = eventNameWithOptionalKeys.split(EVENT_SEPARATOR);
+      window.events?.receive(eventName, (...args: unknown[]) => {
+        if (keysList) {
+          // if the window event specifies one or several keys, wre call `update`
+          // only if the received event is related to one of these keys
+          const keys = keysList.split(KEYS_SEPARATOR);
+          if (args.length === 1 && isKeyEvent(args[0]) && keys.includes(args[0].key)) {
+            update(eventNameWithOptionalKeys, args).catch((error: unknown) => {
+              console.error(`Failed to update ${this.name}`, error);
+            });
+          }
+        } else {
+          // the window event does not specify any key, call `update` for any event with the matching name
+          update(eventNameWithOptionalKeys, args).catch((error: unknown) => {
+            console.error(`Failed to update ${this.name}`, error);
+          });
+        }
       });
     });
 

@@ -23,6 +23,7 @@ import { tmpdir } from 'node:os';
 import type { PullEvent } from '@podman-desktop/api';
 import type { WebContents } from 'electron';
 import { app, BrowserWindow, clipboard, ipcMain, shell } from 'electron';
+import { Container } from 'inversify';
 import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { ExtensionLoader } from '/@/plugin/extension/extension-loader.js';
@@ -32,11 +33,11 @@ import type { ProviderInfo } from '/@api/provider-info.js';
 
 import { securityRestrictionCurrentHandler } from '../security-restrictions-handler.js';
 import type { TrayMenu } from '../tray-menu.js';
-import type { ApiSenderType } from './api.js';
+import { ApiSenderType } from './api.js';
 import { CancellationTokenRegistry } from './cancellation-token-registry.js';
-import type { ConfigurationRegistry } from './configuration-registry.js';
+import { ConfigurationRegistry } from './configuration-registry.js';
 import { ContainerProviderRegistry } from './container-registry.js';
-import type { Directories } from './directories.js';
+import { Directories } from './directories.js';
 import { Emitter } from './events/emitter.js';
 import type { LoggerWithEnd } from './index.js';
 import { PluginSystem } from './index.js';
@@ -54,12 +55,14 @@ let pluginSystem: TestPluginSystem;
 
 class TestPluginSystem extends PluginSystem {
   override initConfigurationRegistry(
-    apiSender: ApiSenderType,
-    directories: Directories,
+    container: Container,
     notifications: NotificationCardOptions[],
     configurationRegistryEmitter: Emitter<ConfigurationRegistry>,
   ): ConfigurationRegistry {
-    return super.initConfigurationRegistry(apiSender, directories, notifications, configurationRegistryEmitter);
+    if (!container.isBound(ConfigurationRegistry)) {
+      container.bind<ConfigurationRegistry>(ConfigurationRegistry).toSelf().inSingletonScope();
+    }
+    return super.initConfigurationRegistry(container, notifications, configurationRegistryEmitter);
   }
 }
 
@@ -313,9 +316,12 @@ test('configurationRegistry propagated', async () => {
   } as unknown as Directories;
   const notifications: NotificationCardOptions[] = [];
 
+  const container = new Container();
+  container.bind<ApiSenderType>(ApiSenderType).toConstantValue(apiSenderMock);
+  container.bind<Directories>(Directories).toConstantValue(directoriesMock);
+
   const configurationRegistry = pluginSystem.initConfigurationRegistry(
-    apiSenderMock,
-    directoriesMock,
+    container,
     notifications,
     configurationRegistryEmitter,
   );
@@ -418,6 +424,48 @@ test('ipcMain.handle returns caught error as objects message property if it is n
 
   const handleReturn = await handle(undefined, '1');
   expect(handleReturn.error).toEqual({ message: nonErrorInstance });
+});
+
+test('container-provider-registry:logsContainer calls logsContainer without abortController if no tokenId is passed', async () => {
+  await pluginSystem.initExtensions(new Emitter<ConfigurationRegistry>());
+  const handle = handlers.get('container-provider-registry:logsContainer');
+  expect(handle).not.equal(undefined);
+
+  const logsContainerSpy = vi.spyOn(ContainerProviderRegistry.prototype, 'logsContainer');
+
+  await handle(undefined, {
+    engineId: 'engine1',
+    containerId: 'container1',
+    onDataId: 1,
+  });
+
+  expect(logsContainerSpy).toHaveBeenCalled();
+  const params = vi.mocked(logsContainerSpy).mock.calls[0]?.[0];
+  const abortController = params?.abortController;
+  expect(abortController).toBeUndefined();
+});
+
+test('container-provider-registry:logsContainer calls logsContainer with abortController if tokenId is passed', async () => {
+  const cancellationTokenRegistry = new CancellationTokenRegistry();
+  const tokenId = cancellationTokenRegistry.createCancellationTokenSource();
+
+  await pluginSystem.initExtensions(new Emitter<ConfigurationRegistry>());
+  const handle = handlers.get('container-provider-registry:logsContainer');
+  expect(handle).not.equal(undefined);
+
+  const logsContainerSpy = vi.spyOn(ContainerProviderRegistry.prototype, 'logsContainer');
+
+  await handle(undefined, {
+    engineId: 'engine1',
+    containerId: 'container1',
+    onDataId: 1,
+    cancellableTokenId: tokenId,
+  });
+
+  expect(logsContainerSpy).toHaveBeenCalled();
+  const params = vi.mocked(logsContainerSpy).mock.calls[0]?.[0];
+  const abortController = params?.abortController;
+  expect(abortController).toBeDefined();
 });
 
 describe.each<{

@@ -18,13 +18,13 @@
 
 import type { KubeConfig, KubernetesObject, ObjectCache } from '@kubernetes/client-node';
 
+import type { Event } from '/@api/event.js';
 import type { ContextPermission } from '/@api/kubernetes-contexts-permissions.js';
 import type { ContextGeneralState, ResourceName } from '/@api/kubernetes-contexts-states.js';
 import type { ResourceCount } from '/@api/kubernetes-resource-count.js';
 import type { KubernetesContextResources } from '/@api/kubernetes-resources.js';
 import type { KubernetesTroubleshootingInformation } from '/@api/kubernetes-troubleshooting.js';
 
-import type { Event } from '../events/emitter.js';
 import { Emitter } from '../events/emitter.js';
 import { ConfigmapsResourceFactory } from './configmaps-resource-factory.js';
 import type { ContextHealthState } from './context-health-checker.js';
@@ -349,8 +349,9 @@ export class ContextsManagerExperimental {
                 });
               }
             });
-            informer.onOffline((_e: OfflineEvent) => {
+            informer.onOffline((e: OfflineEvent) => {
               this.#onOfflineChange.fire();
+              this.#objectCaches.removeForContext(e.kubeconfig.getKubeConfig().currentContext);
             });
             const cache = informer.start();
             this.#objectCaches.set(contextName, resource, cache);

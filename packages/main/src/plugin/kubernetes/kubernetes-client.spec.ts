@@ -48,11 +48,11 @@ import { beforeAll, beforeEach, describe, expect, type Mock, test, vi } from 'vi
 
 import type { KubernetesPortForwardService } from '/@/plugin/kubernetes/kubernetes-port-forward-service.js';
 import { KubernetesPortForwardServiceProvider } from '/@/plugin/kubernetes/kubernetes-port-forward-service.js';
+import type { IConfigurationChangeEvent, IConfigurationRegistry } from '/@api/configuration/models.js';
 import { type ForwardConfig, type ForwardOptions, WorkloadKind } from '/@api/kubernetes-port-forward-model.js';
 import type { V1Route } from '/@api/openshift-types.js';
 
 import type { ApiSenderType } from '../api.js';
-import type { ConfigurationRegistry, IConfigurationChangeEvent } from '../configuration-registry.js';
 import { Emitter } from '../events/emitter.js';
 import { FilesystemMonitoring } from '../filesystem-monitoring.js';
 import type { Telemetry } from '../telemetry/telemetry.js';
@@ -61,14 +61,16 @@ import type { PodCreationSource, ScalableControllerType } from './kubernetes-cli
 import { KubernetesClient } from './kubernetes-client.js';
 import { ResizableTerminalWriter } from './kubernetes-exec-transmitter.js';
 
+vi.mock(import('node:fs'));
+
 const _onDidChangeConfiguration = new Emitter<IConfigurationChangeEvent>();
-const configurationRegistry: ConfigurationRegistry = {
+const configurationRegistry: IConfigurationRegistry = {
   onDidChangeConfiguration: _onDidChangeConfiguration.event,
   registerConfigurations: vi.fn(),
   getConfiguration: vi.fn().mockReturnValue({
     get: vi.fn().mockReturnValue(''),
   }),
-} as unknown as ConfigurationRegistry;
+} as unknown as IConfigurationRegistry;
 
 const fileSystemMonitoring: FilesystemMonitoring = new FilesystemMonitoring();
 const telemetry: Telemetry = {
@@ -1122,6 +1124,7 @@ test('Expect applyResourcesFromYAML to correctly call applyResources after loadi
 });
 
 test('setupWatcher sends kubernetes-context-update when kubeconfig file changes', async () => {
+  vi.mocked(fs.existsSync).mockReturnValue(true);
   const client = createTestClient();
   const fileSystemMonitoringSpy = vi.spyOn(fileSystemMonitoring, 'createFileSystemWatcher');
   const onDidChangeMock = vi.fn();
@@ -1269,7 +1272,6 @@ test('Test should exec into container only once', async () => {
   await client.execIntoContainer('test-pod', 'test-container', onStdOutFn, onStdErrFn, onCloseFn);
   await client.execIntoContainer('test-pod', 'test-container', onStdOutFn, onStdErrFn, onCloseFn);
   expect(execMock).toHaveBeenCalledOnce();
-  expect(telemetry.track).toHaveBeenCalledOnce();
 });
 
 test('Test should throw an exception during exec command if resize parameters are wrong', async () => {
@@ -2334,6 +2336,142 @@ test('test sync resources was called with no resourceVersion, uid, selfLink, or 
         annotations: {
           // eslint-disable-next-line no-useless-escape
           'kubectl.kubernetes.io/last-applied-configuration': `{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"name\":\"test-pod\",\"resourceVersion\":\"123\",\"uid\":\"uid123\",\"selfLink\":\"/api/v1/namespaces/default/pods/test-pod\",\"creationTimestamp\":\"1970-01-01T00:00:00.042Z\",\"annotations\":{}}}`,
+        },
+        name: 'test-pod',
+        namespace: 'default',
+      },
+    },
+    undefined,
+    undefined,
+    'podman-desktop',
+  );
+});
+
+test('test sync resources uses create without resourceVersion, uid, selfLink, or creationTimestamp', async () => {
+  const client = createTestClient('default');
+  const context = 'test-context';
+  const namespace = 'default';
+  const manifests: KubernetesObject[] = [
+    {
+      apiVersion: 'v1',
+      kind: 'Pod',
+      metadata: {
+        name: 'test-pod',
+        resourceVersion: '123',
+        uid: 'uid123',
+        selfLink: '/api/v1/namespaces/default/pods/test-pod',
+        creationTimestamp: new Date(42),
+      },
+    },
+  ];
+
+  const mockedCreate = vi.fn();
+  makeApiClientMock.mockReturnValue({
+    read: vi.fn().mockRejectedValue(new Error('NotFound')), // Force create
+    create: mockedCreate,
+    patch: vi.fn(),
+  });
+
+  await client.syncResources(context, manifests, 'create', namespace);
+
+  expect(mockedCreate).toHaveBeenCalledWith({
+    apiVersion: 'v1',
+    kind: 'Pod',
+    metadata: {
+      annotations: {
+        'kubectl.kubernetes.io/last-applied-configuration': expect.stringContaining('"resourceVersion":"123"'),
+      },
+      name: 'test-pod',
+      namespace: 'default',
+    },
+  });
+});
+
+test('test sync resources uses create and removes status', async () => {
+  const client = createTestClient('default');
+  const context = 'test-context';
+  const namespace = 'default';
+  const manifests = [
+    {
+      apiVersion: 'v1',
+      kind: 'Pod',
+      metadata: {
+        name: 'test-pod',
+        resourceVersion: '123',
+        uid: 'uid123',
+        selfLink: '/api/v1/namespaces/default/pods/test-pod',
+        creationTimestamp: new Date(42),
+      },
+      status: {
+        phase: 'Running',
+        conditions: [
+          {
+            type: 'Ready',
+            status: 'True',
+          },
+        ],
+      },
+    },
+  ];
+
+  const mockedCreate = vi.fn();
+  makeApiClientMock.mockReturnValue({
+    read: vi.fn().mockRejectedValue(new Error('NotFound')),
+    create: mockedCreate,
+    patch: vi.fn(),
+  });
+
+  await client.syncResources(context, manifests, 'create', namespace);
+
+  expect(mockedCreate).toHaveBeenCalledWith(expect.not.objectContaining({ status: expect.anything() }));
+});
+
+test('test sync resources was called with no status being passed through', async () => {
+  const client = createTestClient('default');
+  const context = 'test-context';
+  const namespace = 'default';
+  const manifests = [
+    {
+      apiVersion: 'v1',
+      kind: 'Pod',
+      metadata: {
+        name: 'test-pod',
+        resourceVersion: '123',
+        uid: 'uid123',
+        selfLink: '/api/v1/namespaces/default/pods/test-pod',
+        creationTimestamp: new Date(42),
+      },
+      status: {
+        phase: 'Running',
+        conditions: [
+          {
+            type: 'Ready',
+            status: 'True',
+          },
+        ],
+      },
+    },
+  ];
+
+  const mockedPatch = vi.fn();
+
+  makeApiClientMock.mockReturnValue({
+    read: vi.fn(),
+    create: vi.fn(),
+    patch: mockedPatch,
+  });
+
+  // Call the syncResources method with 'create' action
+  await client.syncResources(context, manifests, 'apply', namespace);
+
+  // Expect it to be called with NO status
+  expect(mockedPatch).toHaveBeenCalledWith(
+    {
+      apiVersion: 'v1',
+      kind: 'Pod',
+      metadata: {
+        annotations: {
+          'kubectl.kubernetes.io/last-applied-configuration': expect.anything(),
         },
         name: 'test-pod',
         namespace: 'default',

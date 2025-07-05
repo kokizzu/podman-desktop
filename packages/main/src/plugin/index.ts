@@ -27,6 +27,7 @@ import type {
   Cluster,
   Context as KubernetesContext,
   KubernetesObject,
+  User,
   V1ConfigMap,
   V1CronJob,
   V1Deployment,
@@ -46,6 +47,7 @@ import type Dockerode from 'dockerode';
 import type { WebContents } from 'electron';
 import { app, BrowserWindow, clipboard, ipcMain, shell } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron/main';
+import { Container } from 'inversify';
 
 import type { KubernetesGeneratorInfo } from '/@/plugin/api/KubernetesGeneratorInfo.js';
 import { ExtensionLoader } from '/@/plugin/extension/extension-loader.js';
@@ -56,7 +58,6 @@ import type {
   KubernetesGeneratorSelector,
 } from '/@/plugin/kubernetes/kube-generator-registry.js';
 import { KubeGeneratorRegistry } from '/@/plugin/kubernetes/kube-generator-registry.js';
-import type { Menu } from '/@/plugin/menu-registry.js';
 import { MenuRegistry } from '/@/plugin/menu-registry.js';
 import { NavigationManager } from '/@/plugin/navigation/navigation-manager.js';
 import type { ExtensionBanner, RecommendedRegistry } from '/@/plugin/recommendations/recommendations-api.js';
@@ -66,6 +67,7 @@ import { Updater } from '/@/plugin/updater.js';
 import type { CliToolInfo } from '/@api/cli-tool-info.js';
 import type { ColorInfo } from '/@api/color-info.js';
 import type { CommandInfo } from '/@api/command-info.js';
+import { type IConfigurationPropertyRecordedSchema, IConfigurationRegistry } from '/@api/configuration/models.js';
 import type {
   ContainerCreateOptions,
   ContainerExportOptions,
@@ -80,6 +82,7 @@ import type {
 import type { ContainerInspectInfo } from '/@api/container-inspect-info.js';
 import type { ContainerStatsInfo } from '/@api/container-stats-info.js';
 import type { ContributionInfo } from '/@api/contribution-info.js';
+import type { MessageBoxOptions, MessageBoxReturnValue } from '/@api/dialog.js';
 import type { DockerSocketMappingStatusInfo } from '/@api/docker-compatibility-info.js';
 import type { ExtensionDevelopmentFolderInfo } from '/@api/extension-development-folders-info.js';
 import type { ExtensionInfo } from '/@api/extension-info.js';
@@ -88,6 +91,7 @@ import type { HistoryInfo } from '/@api/history-info.js';
 import type { IconInfo } from '/@api/icon-info.js';
 import type { ImageCheckerInfo } from '/@api/image-checker-info.js';
 import type { ImageFilesInfo } from '/@api/image-files-info.js';
+import type { ImageFilesystemLayersUI } from '/@api/image-filesystem-layers.js';
 import type { ImageInfo, PodmanListImagesOptions } from '/@api/image-info.js';
 import type { ImageInspectInfo } from '/@api/image-inspect-info.js';
 import type { ImageSearchOptions, ImageSearchResult, ImageTagsListOptions } from '/@api/image-registry.js';
@@ -100,6 +104,7 @@ import type { ResourceCount } from '/@api/kubernetes-resource-count.js';
 import type { KubernetesContextResources } from '/@api/kubernetes-resources.js';
 import type { KubernetesTroubleshootingInformation } from '/@api/kubernetes-troubleshooting.js';
 import type { ManifestCreateOptions, ManifestInspectInfo, ManifestPushOptions } from '/@api/manifest-info.js';
+import type { Menu } from '/@api/menu.js';
 import type { NetworkInspectInfo } from '/@api/network-info.js';
 import type { NotificationCard, NotificationCardOptions } from '/@api/notification.js';
 import type { OnboardingInfo, OnboardingStatus } from '/@api/onboarding.js';
@@ -115,15 +120,16 @@ import type {
 import type { ProxyState } from '/@api/proxy.js';
 import type { PullEvent } from '/@api/pull-event.js';
 import type { ReleaseNotesInfo } from '/@api/release-notes-info.js';
+import type { StatusBarEntryDescriptor } from '/@api/status-bar.js';
 import type { PinOption } from '/@api/status-bar/pin-option.js';
 import type { ViewInfoUI } from '/@api/view-info.js';
 import type { VolumeInspectInfo, VolumeListInfo } from '/@api/volume-info.js';
 import type { WebviewInfo } from '/@api/webview-info.js';
 
 import { securityRestrictionCurrentHandler } from '../security-restrictions-handler.js';
-import type { TrayMenu } from '../tray-menu.js';
+import { TrayMenu } from '../tray-menu.js';
 import { isMac } from '../util.js';
-import type { ApiSenderType } from './api.js';
+import { ApiSenderType } from './api.js';
 import type { PodInfo, PodInspectInfo } from './api/pod-info.js';
 import { AppearanceInit } from './appearance-init.js';
 import type { AuthenticationProviderInfo } from './authentication.js';
@@ -134,9 +140,9 @@ import { Certificates } from './certificates.js';
 import { CliToolRegistry } from './cli-tool-registry.js';
 import { CloseBehavior } from './close-behavior.js';
 import { ColorRegistry } from './color-registry.js';
+import { InjectableColorRegistry } from './color-registry-inject.js';
 import { CommandRegistry } from './command-registry.js';
 import { CommandsInit } from './commands-init.js';
-import type { IConfigurationPropertyRecordedSchema } from './configuration-registry.js';
 import { ConfigurationRegistry } from './configuration-registry.js';
 import { ConfirmationInit } from './confirmation-init.js';
 import { ContainerProviderRegistry } from './container-registry.js';
@@ -173,7 +179,6 @@ import { KubernetesClient } from './kubernetes/kubernetes-client.js';
 import { downloadGuideList } from './learning-center/learning-center.js';
 import { LearningCenterInit } from './learning-center-init.js';
 import { LibpodApiInit } from './libpod-api-enable/libpod-api-init.js';
-import type { MessageBoxOptions, MessageBoxReturnValue } from './message-box.js';
 import { MessageBox } from './message-box.js';
 import { NavigationItemsInit } from './navigation-items-init.js';
 import { OnboardingRegistry } from './onboarding-registry.js';
@@ -185,7 +190,6 @@ import { ReleaseNotesBannerInit } from './release-notes-banner-init.js';
 import { SafeStorageRegistry } from './safe-storage/safe-storage-registry.js';
 import { PinRegistry } from './statusbar/pin-registry.js';
 import { StatusbarProvidersInit } from './statusbar/statusbar-providers-init.js';
-import type { StatusBarEntryDescriptor } from './statusbar/statusbar-registry.js';
 import { StatusBarRegistry } from './statusbar/statusbar-registry.js';
 import { NotificationRegistry } from './tasks/notification-registry.js';
 import { ProgressImpl } from './tasks/progress-impl.js';
@@ -195,7 +199,7 @@ import { TrayIconColor } from './tray-icon-color.js';
 import { TrayMenuRegistry } from './tray-menu-registry.js';
 import { Troubleshooting } from './troubleshooting.js';
 import type { IDisposable } from './types/disposable.js';
-import type { Deferred } from './util/deferred.js';
+import { Deferred } from './util/deferred.js';
 import { Exec } from './util/exec.js';
 import { getFreePort, getFreePortRange, isFreePort } from './util/port.js';
 import { TaskConnectionUtils } from './util/task-connection-utils.js';
@@ -423,12 +427,11 @@ export class PluginSystem {
   }
 
   protected initConfigurationRegistry(
-    apiSender: ApiSenderType,
-    directories: Directories,
+    container: Container,
     notifications: NotificationCardOptions[],
     configurationRegistryEmitter: Emitter<ConfigurationRegistry>,
   ): ConfigurationRegistry {
-    const configurationRegistry = new ConfigurationRegistry(apiSender, directories);
+    const configurationRegistry = container.get<ConfigurationRegistry>(ConfigurationRegistry);
     notifications.push(...configurationRegistry.init());
     configurationRegistryEmitter.fire(configurationRegistry);
     return configurationRegistry;
@@ -453,79 +456,97 @@ export class PluginSystem {
 
     // init api sender
     const apiSender = this.getApiSender(this.getWebContentsSender());
+    const container = new Container();
+    container.bind<ApiSenderType>(ApiSenderType).toConstantValue(apiSender);
+    container.bind<TrayMenu>(TrayMenu).toConstantValue(this.trayMenu);
+    container.bind<IconRegistry>(IconRegistry).toSelf().inSingletonScope();
+    container.bind<Directories>(Directories).toSelf().inSingletonScope();
+    container.bind<StatusBarRegistry>(StatusBarRegistry).toSelf().inSingletonScope();
+    container.bind<SafeStorageRegistry>(SafeStorageRegistry).toSelf().inSingletonScope();
 
-    const iconRegistry = new IconRegistry(apiSender);
-    const directories = new Directories();
-    const statusBarRegistry = new StatusBarRegistry(apiSender);
-
-    const safeStorageRegistry = new SafeStorageRegistry(directories);
+    const safeStorageRegistry = container.get<SafeStorageRegistry>(SafeStorageRegistry);
     notifications.push(...(await safeStorageRegistry.init()));
 
+    container.bind<ConfigurationRegistry>(ConfigurationRegistry).toSelf().inSingletonScope();
+    container.bind<IConfigurationRegistry>(IConfigurationRegistry).toService(ConfigurationRegistry);
     const configurationRegistry = this.initConfigurationRegistry(
-      apiSender,
-      directories,
+      container,
       notifications,
       configurationRegistryEmitter,
     );
-
-    const colorRegistry = new ColorRegistry(apiSender, configurationRegistry);
+    container.bind<ColorRegistry>(ColorRegistry).to(InjectableColorRegistry).inSingletonScope();
+    const colorRegistry = container.get<ColorRegistry>(ColorRegistry);
     colorRegistry.init();
 
-    const certificates = new Certificates();
+    container.bind<Certificates>(Certificates).toSelf().inSingletonScope();
+    const certificates = container.get<Certificates>(Certificates);
     await certificates.init();
-    const proxy = new Proxy(configurationRegistry, certificates);
+
+    container.bind<Proxy>(Proxy).toSelf().inSingletonScope();
+    const proxy = container.get<Proxy>(Proxy);
     await proxy.init();
 
-    const telemetry = new Telemetry(configurationRegistry);
-    await telemetry.init();
     const exec = new Exec(proxy);
+    container.bind<Exec>(Exec).toConstantValue(exec);
 
-    const commandRegistry = new CommandRegistry(apiSender, telemetry);
-    const taskManager = new TaskManager(apiSender, statusBarRegistry, commandRegistry, configurationRegistry);
+    container.bind<Telemetry>(Telemetry).toSelf().inSingletonScope();
+    const telemetry = container.get<Telemetry>(Telemetry);
+    await telemetry.init();
+
+    container.bind<CommandRegistry>(CommandRegistry).toSelf().inSingletonScope();
+    const commandRegistry = container.get<CommandRegistry>(CommandRegistry);
+
+    container.bind<TaskManager>(TaskManager).toSelf().inSingletonScope();
+    const taskManager = container.get<TaskManager>(TaskManager);
     taskManager.init();
 
-    const notificationRegistry = new NotificationRegistry(apiSender, taskManager);
-    const menuRegistry = new MenuRegistry(commandRegistry);
-    const kubeGeneratorRegistry = new KubeGeneratorRegistry();
-    const imageRegistry = new ImageRegistry(apiSender, telemetry, certificates, proxy);
-    const viewRegistry = new ViewRegistry();
-    const context = new Context(apiSender);
-    const containerProviderRegistry = new ContainerProviderRegistry(
-      apiSender,
-      configurationRegistry,
-      imageRegistry,
-      telemetry,
-    );
-    const cancellationTokenRegistry = new CancellationTokenRegistry();
-    const providerRegistry = new ProviderRegistry(apiSender, containerProviderRegistry, telemetry);
-    const trayMenuRegistry = new TrayMenuRegistry(this.trayMenu, commandRegistry, providerRegistry, telemetry);
-    const inputQuickPickRegistry = new InputQuickPickRegistry(apiSender);
-    const fileSystemMonitoring = new FilesystemMonitoring();
-    const customPickRegistry = new CustomPickRegistry(apiSender);
-    const onboardingRegistry = new OnboardingRegistry(context);
-    const kubernetesClient = new KubernetesClient(apiSender, configurationRegistry, fileSystemMonitoring, telemetry);
+    container.bind<NotificationRegistry>(NotificationRegistry).toSelf().inSingletonScope();
+    container.bind<MenuRegistry>(MenuRegistry).toSelf().inSingletonScope();
+    container.bind<KubeGeneratorRegistry>(KubeGeneratorRegistry).toSelf().inSingletonScope();
+    container.bind<ImageRegistry>(ImageRegistry).toSelf().inSingletonScope();
+    container.bind<ViewRegistry>(ViewRegistry).toSelf().inSingletonScope();
+    container.bind<Context>(Context).toSelf().inSingletonScope();
+    container.bind<ContainerProviderRegistry>(ContainerProviderRegistry).toSelf().inSingletonScope();
+    container.bind<CancellationTokenRegistry>(CancellationTokenRegistry).toSelf().inSingletonScope();
+
+    container.bind<ProviderRegistry>(ProviderRegistry).toSelf().inSingletonScope();
+    container.bind<TrayMenuRegistry>(TrayMenuRegistry).toSelf().inSingletonScope();
+    container.bind<InputQuickPickRegistry>(InputQuickPickRegistry).toSelf().inSingletonScope();
+    container.bind<FilesystemMonitoring>(FilesystemMonitoring).toSelf().inSingletonScope();
+    container.bind<CustomPickRegistry>(CustomPickRegistry).toSelf().inSingletonScope();
+    container.bind<OnboardingRegistry>(OnboardingRegistry).toSelf().inSingletonScope();
+    container.bind<KubernetesClient>(KubernetesClient).toSelf().inSingletonScope();
+    const kubernetesClient = container.get<KubernetesClient>(KubernetesClient);
     await kubernetesClient.init();
-    const closeBehaviorConfiguration = new CloseBehavior(configurationRegistry);
+
+    container.bind<CloseBehavior>(CloseBehavior).toSelf().inSingletonScope();
+    const closeBehaviorConfiguration = container.get<CloseBehavior>(CloseBehavior);
     await closeBehaviorConfiguration.init();
 
-    const dockerCompatibility = new DockerCompatibility(configurationRegistry, providerRegistry);
+    container.bind<DockerCompatibility>(DockerCompatibility).toSelf().inSingletonScope();
+    const dockerCompatibility = container.get<DockerCompatibility>(DockerCompatibility);
     dockerCompatibility.init();
 
-    const statusbarProviders = new StatusbarProvidersInit(configurationRegistry);
+    container.bind<StatusbarProvidersInit>(StatusbarProvidersInit).toSelf().inSingletonScope();
+    const statusbarProviders = container.get<StatusbarProvidersInit>(StatusbarProvidersInit);
     statusbarProviders.init();
 
-    const messageBox = new MessageBox(apiSender);
+    container.bind<MessageBox>(MessageBox).toSelf().inSingletonScope();
 
     // Don't show the tray icon options on Mac
     if (!isMac()) {
-      const trayIconColor = new TrayIconColor(configurationRegistry);
+      container.bind<TrayIconColor>(TrayIconColor).toSelf().inSingletonScope();
+      const trayIconColor = container.get<TrayIconColor>(TrayIconColor);
       await trayIconColor.init();
     }
 
     // Add all notifications to notification registry
+    const notificationRegistry = container.get<NotificationRegistry>(NotificationRegistry);
     notifications.forEach(notification => notificationRegistry.addNotification(notification));
     notifications.length = 0;
     Object.freeze(notifications);
+    const kubeGeneratorRegistry = container.get<KubeGeneratorRegistry>(KubeGeneratorRegistry);
+    const containerProviderRegistry = container.get<ContainerProviderRegistry>(ContainerProviderRegistry);
     kubeGeneratorRegistry.registerDefaultKubeGenerator({
       name: 'PodmanKube',
       types: ['Compose', 'Container', 'Pod'],
@@ -548,7 +569,10 @@ export class PluginSystem {
       },
     });
 
-    const autoStartEngine = new AutostartEngine(configurationRegistry, providerRegistry);
+    container.bind<AutostartEngine>(AutostartEngine).toSelf().inSingletonScope();
+    const autoStartEngine = container.get<AutostartEngine>(AutostartEngine);
+
+    const providerRegistry = container.get<ProviderRegistry>(ProviderRegistry);
     providerRegistry.registerAutostartEngine(autoStartEngine);
 
     providerRegistry.addProviderListener((name: string, providerInfo: ProviderInfo) => {
@@ -557,6 +581,7 @@ export class PluginSystem {
       }
     });
 
+    const statusBarRegistry = container.get<StatusBarRegistry>(StatusBarRegistry);
     statusBarRegistry.setEntry('help', false, -1, undefined, 'Help', 'fa fa-question-circle', true, 'help');
 
     statusBarRegistry.setEntry(
@@ -582,159 +607,108 @@ export class PluginSystem {
     );
 
     // Init update logic
-    const podmanDesktopUpdater = new Updater(
-      messageBox,
-      configurationRegistry,
-      statusBarRegistry,
-      commandRegistry,
-      taskManager,
-      apiSender,
-    );
+    container.bind<Updater>(Updater).toSelf().inSingletonScope();
+    const podmanDesktopUpdater = container.get<Updater>(Updater);
     podmanDesktopUpdater.init();
 
     // register appearance (light, dark, auto being system)
-    const appearanceConfiguration = new AppearanceInit(configurationRegistry);
+    container.bind<AppearanceInit>(AppearanceInit).toSelf().inSingletonScope();
+    const appearanceConfiguration = container.get<AppearanceInit>(AppearanceInit);
     appearanceConfiguration.init();
 
-    const confirmationConfiguration = new ConfirmationInit(configurationRegistry);
+    container.bind<ConfirmationInit>(ConfirmationInit).toSelf().inSingletonScope();
+    const confirmationConfiguration = container.get<ConfirmationInit>(ConfirmationInit);
     confirmationConfiguration.init();
 
-    const releaseNotesBannerConfiguration = new ReleaseNotesBannerInit(configurationRegistry);
+    container.bind<ReleaseNotesBannerInit>(ReleaseNotesBannerInit).toSelf().inSingletonScope();
+    const releaseNotesBannerConfiguration = container.get<ReleaseNotesBannerInit>(ReleaseNotesBannerInit);
     releaseNotesBannerConfiguration.init();
 
-    const learningCenterConfiguration = new LearningCenterInit(configurationRegistry);
+    container.bind<LearningCenterInit>(LearningCenterInit).toSelf().inSingletonScope();
+    const learningCenterConfiguration = container.get<LearningCenterInit>(LearningCenterInit);
     learningCenterConfiguration.init();
 
-    const terminalInit = new TerminalInit(configurationRegistry);
+    container.bind<TerminalInit>(TerminalInit).toSelf().inSingletonScope();
+    const terminalInit = container.get<TerminalInit>(TerminalInit);
     terminalInit.init();
 
-    const navigationItems = new NavigationItemsInit(configurationRegistry);
+    container.bind<NavigationItemsInit>(NavigationItemsInit).toSelf().inSingletonScope();
+    const navigationItems = container.get<NavigationItemsInit>(NavigationItemsInit);
     navigationItems.init();
 
     // only in development mode
     if (import.meta.env.DEV) {
-      const openDevToolsInit = new OpenDevToolsInit(configurationRegistry);
+      container.bind<OpenDevToolsInit>(OpenDevToolsInit).toSelf().inSingletonScope();
+      const openDevToolsInit = container.get<OpenDevToolsInit>(OpenDevToolsInit);
       openDevToolsInit.init();
     }
 
     // init editor configuration
-    const editorInit = new EditorInit(configurationRegistry);
+    container.bind<EditorInit>(EditorInit).toSelf().inSingletonScope();
+    const editorInit = container.get<EditorInit>(EditorInit);
     editorInit.init();
 
     // init welcome configuration
-    const welcomeInit = new WelcomeInit(configurationRegistry);
+    container.bind<WelcomeInit>(WelcomeInit).toSelf().inSingletonScope();
+    const welcomeInit = container.get<WelcomeInit>(WelcomeInit);
     welcomeInit.init();
 
     // init libpod API configuration
-    const libpodApiInit = new LibpodApiInit(configurationRegistry);
+    container.bind<LibpodApiInit>(LibpodApiInit).toSelf().inSingletonScope();
+    const libpodApiInit = container.get<LibpodApiInit>(LibpodApiInit);
     libpodApiInit.init();
 
-    const authentication = new AuthenticationImpl(apiSender, messageBox);
+    container.bind<AuthenticationImpl>(AuthenticationImpl).toSelf().inSingletonScope();
+    container.bind<CliToolRegistry>(CliToolRegistry).toSelf().inSingletonScope();
+    container.bind<ImageCheckerImpl>(ImageCheckerImpl).toSelf().inSingletonScope();
+    container.bind<ImageFilesRegistry>(ImageFilesRegistry).toSelf().inSingletonScope();
+    container.bind<Troubleshooting>(Troubleshooting).toSelf().inSingletonScope();
+    container.bind<ContributionManager>(ContributionManager).toSelf().inSingletonScope();
+    container.bind<WebviewRegistry>(WebviewRegistry).toSelf().inSingletonScope();
 
-    const cliToolRegistry = new CliToolRegistry(apiSender);
-
-    const imageChecker = new ImageCheckerImpl(apiSender);
-
-    const imageFiles = new ImageFilesRegistry(apiSender, configurationRegistry, context);
-
-    const troubleshooting = new Troubleshooting();
-
-    const contributionManager = new ContributionManager(apiSender, directories, containerProviderRegistry, exec);
-
-    const webviewRegistry = new WebviewRegistry(apiSender);
+    const webviewRegistry = container.get<WebviewRegistry>(WebviewRegistry);
     await webviewRegistry.start();
 
-    const dialogRegistry = new DialogRegistry(this.mainWindowDeferred);
+    container.bind<Deferred<BrowserWindow>>(Deferred<BrowserWindow>).toConstantValue(this.mainWindowDeferred);
+    container.bind<DialogRegistry>(DialogRegistry).toSelf().inSingletonScope();
+
+    const dialogRegistry = container.get<DialogRegistry>(DialogRegistry);
     dialogRegistry.init();
 
-    const navigationManager = new NavigationManager(
-      apiSender,
-      containerProviderRegistry,
-      contributionManager,
-      providerRegistry,
-      webviewRegistry,
-      commandRegistry,
-      onboardingRegistry,
-    );
-
-    const commandsInit = new CommandsInit(
-      commandRegistry,
-      apiSender,
-      navigationManager,
-      taskManager,
-      containerProviderRegistry,
-    );
+    container.bind<NavigationManager>(NavigationManager).toSelf().inSingletonScope();
+    container.bind<CommandsInit>(CommandsInit).toSelf().inSingletonScope();
+    const commandsInit = container.get<CommandsInit>(CommandsInit);
     commandsInit.init();
 
+    const navigationManager = container.get<NavigationManager>(NavigationManager);
     navigationManager.registerRoute({ routeId: 'kubernetes', commandId: 'kubernetes-navigation' });
 
-    const extensionAnalyzer = new ExtensionAnalyzer();
-
-    const extensionWatcher = new ExtensionWatcher(fileSystemMonitoring);
-    const extensionDevelopmentFolders = new ExtensionDevelopmentFolders(
-      configurationRegistry,
-      extensionAnalyzer,
-      apiSender,
-    );
+    container.bind<ExtensionAnalyzer>(ExtensionAnalyzer).toSelf().inSingletonScope();
+    container.bind<ExtensionWatcher>(ExtensionWatcher).toSelf().inSingletonScope();
+    container.bind<ExtensionDevelopmentFolders>(ExtensionDevelopmentFolders).toSelf().inSingletonScope();
+    const extensionDevelopmentFolders = container.get<ExtensionDevelopmentFolders>(ExtensionDevelopmentFolders);
     extensionDevelopmentFolders.init();
 
-    const pinRegistry = new PinRegistry(commandRegistry, apiSender, configurationRegistry, providerRegistry, telemetry);
+    container.bind<PinRegistry>(PinRegistry).toSelf().inSingletonScope();
+    const pinRegistry = container.get<PinRegistry>(PinRegistry);
     pinRegistry.init();
 
-    this.extensionLoader = new ExtensionLoader(
-      commandRegistry,
-      menuRegistry,
-      providerRegistry,
-      configurationRegistry,
-      imageRegistry,
-      apiSender,
-      trayMenuRegistry,
-      messageBox,
-      new ProgressImpl(taskManager, navigationManager, cancellationTokenRegistry),
-      statusBarRegistry,
-      kubernetesClient,
-      fileSystemMonitoring,
-      proxy,
-      containerProviderRegistry,
-      inputQuickPickRegistry,
-      customPickRegistry,
-      authentication,
-      iconRegistry,
-      onboardingRegistry,
-      telemetry,
-      viewRegistry,
-      context,
-      directories,
-      exec,
-      kubeGeneratorRegistry,
-      cliToolRegistry,
-      notificationRegistry,
-      imageChecker,
-      imageFiles,
-      navigationManager,
-      webviewRegistry,
-      colorRegistry,
-      dialogRegistry,
-      safeStorageRegistry,
-      certificates,
-      extensionWatcher,
-      extensionDevelopmentFolders,
-      extensionAnalyzer,
-    );
+    container.bind<ProgressImpl>(ProgressImpl).toSelf().inSingletonScope();
+
+    container.bind<ExtensionLoader>(ExtensionLoader).toSelf().inSingletonScope();
+    this.extensionLoader = container.get<ExtensionLoader>(ExtensionLoader);
     await this.extensionLoader.init();
 
-    const feedback = new FeedbackHandler(this.extensionLoader);
+    container.bind<FeedbackHandler>(FeedbackHandler).toSelf().inSingletonScope();
 
-    const extensionsCatalog = new ExtensionsCatalog(certificates, proxy, configurationRegistry, apiSender);
+    container.bind<ExtensionsCatalog>(ExtensionsCatalog).toSelf().inSingletonScope();
+    const extensionsCatalog = container.get<ExtensionsCatalog>(ExtensionsCatalog);
     extensionsCatalog.init();
-    const featured = new Featured(this.extensionLoader, extensionsCatalog);
+    container.bind<Featured>(Featured).toSelf().inSingletonScope();
+    const featured = container.get<Featured>(Featured);
 
-    const recommendationsRegistry = new RecommendationsRegistry(
-      configurationRegistry,
-      featured,
-      this.extensionLoader,
-      extensionsCatalog,
-    );
+    container.bind<RecommendationsRegistry>(RecommendationsRegistry).toSelf().inSingletonScope();
+    const recommendationsRegistry = container.get<RecommendationsRegistry>(RecommendationsRegistry);
     recommendationsRegistry.init();
 
     // do not wait
@@ -743,6 +717,25 @@ export class PluginSystem {
     });
 
     // setup security restrictions on links
+    const messageBox = container.get<MessageBox>(MessageBox);
+    const imageChecker = container.get<ImageCheckerImpl>(ImageCheckerImpl);
+    const imageFiles = container.get<ImageFilesRegistry>(ImageFilesRegistry);
+    const viewRegistry = container.get<ViewRegistry>(ViewRegistry);
+    const feedback = container.get<FeedbackHandler>(FeedbackHandler);
+    const cancellationTokenRegistry = container.get<CancellationTokenRegistry>(CancellationTokenRegistry);
+    const cliToolRegistry = container.get<CliToolRegistry>(CliToolRegistry);
+    const troubleshooting = container.get<Troubleshooting>(Troubleshooting);
+    const menuRegistry = container.get<MenuRegistry>(MenuRegistry);
+    const contributionManager = container.get<ContributionManager>(ContributionManager);
+    const iconRegistry = container.get<IconRegistry>(IconRegistry);
+    const onboardingRegistry = container.get<OnboardingRegistry>(OnboardingRegistry);
+    const directories = container.get<Directories>(Directories);
+    const context = container.get<Context>(Context);
+    const inputQuickPickRegistry = container.get<InputQuickPickRegistry>(InputQuickPickRegistry);
+    const customPickRegistry = container.get<CustomPickRegistry>(CustomPickRegistry);
+    const authentication = container.get<AuthenticationImpl>(AuthenticationImpl);
+    const imageRegistry = container.get<ImageRegistry>(ImageRegistry);
+
     await this.setupSecurityRestrictionsOnLinks(messageBox);
 
     this.ipcHandle('tasks:clear-all', async (): Promise<void> => {
@@ -1149,7 +1142,20 @@ export class PluginSystem {
     );
     this.ipcHandle(
       'container-provider-registry:logsContainer',
-      async (_listener, logsParams: { engineId: string; containerId: string; onDataId: number }): Promise<void> => {
+      async (
+        _listener,
+        logsParams: {
+          engineId: string;
+          containerId: string;
+          onDataId: number;
+          cancellableTokenId?: number;
+        },
+      ): Promise<void> => {
+        const abortController = this.createAbortControllerOnCancellationToken(
+          cancellationTokenRegistry,
+          logsParams.cancellableTokenId,
+        );
+
         return containerProviderRegistry.logsContainer({
           engineId: logsParams.engineId,
           id: logsParams.containerId,
@@ -1161,6 +1167,7 @@ export class PluginSystem {
               data,
             );
           },
+          abortController,
         });
       },
     );
@@ -1332,6 +1339,7 @@ export class PluginSystem {
         onDataCallbacksBuildImageId: number,
         cancellableTokenId?: number,
         buildargs?: { [key: string]: string },
+        taskId?: number,
       ): Promise<unknown> => {
         // create task
         const task = taskManager.createTask({
@@ -1339,17 +1347,20 @@ export class PluginSystem {
           action: {
             name: 'Go to task >',
             execute: () => {
-              navigationManager.navigateToImageBuild().catch((err: unknown) => {
+              navigationManager.navigateToImageBuild(taskId).catch((err: unknown) => {
                 console.error(`Something went wrong while trying to navigate to image build: ${String(err)}`);
               });
             },
           },
         });
 
+        task.onUpdate(e => apiSender.send(`build-image-task-${e.action}`, taskId));
+
         const abortController = this.createAbortControllerOnCancellationToken(
           cancellationTokenRegistry,
           cancellableTokenId,
         );
+
         return containerProviderRegistry
           .buildImage(
             containerBuildContextDirectory,
@@ -2052,6 +2063,13 @@ export class PluginSystem {
     );
 
     this.ipcHandle(
+      'extension-loader:ensureExtensionIsEnabled',
+      async (_listener: Electron.IpcMainInvokeEvent, extensionId: string): Promise<void> => {
+        return this.extensionLoader.ensureExtensionIsEnabled(extensionId);
+      },
+    );
+
+    this.ipcHandle(
       'shell:openExternal',
       async (_listener: Electron.IpcMainInvokeEvent, link: string): Promise<void> => {
         if (securityRestrictionCurrentHandler.handler) {
@@ -2579,6 +2597,10 @@ export class PluginSystem {
       return kubernetesClient.getClusters();
     });
 
+    this.ipcHandle('kubernetes-client:getUsers', async (): Promise<User[]> => {
+      return kubernetesClient.getUsers();
+    });
+
     this.ipcHandle('kubernetes-client:getCurrentNamespace', async (): Promise<string | undefined> => {
       return kubernetesClient.getCurrentNamespace();
     });
@@ -2599,8 +2621,21 @@ export class PluginSystem {
     });
     this.ipcHandle(
       'kubernetes-client:updateContext',
-      async (_listener, contextName: string, newContextName: string, newContextNamespace: string): Promise<void> => {
-        return kubernetesClient.updateContext(contextName, newContextName, newContextNamespace);
+      async (
+        _listener,
+        contextName: string,
+        newContextName: string,
+        newContextNamespace: string,
+        newContextCluster: string,
+        newContextUser: string,
+      ): Promise<void> => {
+        return kubernetesClient.updateContext(
+          contextName,
+          newContextName,
+          newContextNamespace,
+          newContextCluster,
+          newContextUser,
+        );
       },
     );
 
@@ -2887,7 +2922,7 @@ export class PluginSystem {
         id: string,
         image: ImageInfo,
         tokenId?: number,
-      ): Promise<containerDesktopAPI.ImageFilesystemLayers | undefined> => {
+      ): Promise<ImageFilesystemLayersUI | undefined> => {
         let token;
         if (tokenId) {
           const tokenSource = cancellationTokenRegistry.getCancellationTokenSource(tokenId);

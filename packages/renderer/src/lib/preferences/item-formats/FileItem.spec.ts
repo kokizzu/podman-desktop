@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (C) 2023-2024 Red Hat, Inc.
+ * Copyright (C) 2023-2025 Red Hat, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, expect, test, vi } from 'vitest';
 
-import type { IConfigurationPropertyRecordedSchema } from '../../../../../main/src/plugin/configuration-registry';
+import type { IConfigurationPropertyRecordedSchema } from '/@api/configuration/models';
+
 import FileItem from './FileItem.svelte';
 
 const openDialogMock = vi.fn();
@@ -61,7 +62,7 @@ test('Ensure clicking on browse invokes openDialog with default selector', async
   };
 
   render(FileItem, { record, value: '' });
-  const input = screen.getByRole('button');
+  const input = screen.getByRole('button', { name: 'browse' });
   expect(input).toBeInTheDocument();
   await userEvent.click(input);
 
@@ -83,7 +84,7 @@ test('Ensure clicking on browse invokes openDialog with corresponding directory 
   };
 
   render(FileItem, { record, value: '' });
-  const input = screen.getByRole('button');
+  const input = screen.getByRole('button', { name: 'browse' });
   expect(input).toBeInTheDocument();
   await userEvent.click(input);
 
@@ -108,11 +109,36 @@ test('Ensure the onChange is called if the fileInput onChange is triggered', asy
 
   const onChangeMock = vi.fn().mockResolvedValue('');
   render(FileItem, { record, value: '', onChange: onChangeMock });
-  const browseButton = screen.getByRole('button');
+  const browseButton = screen.getByRole('button', { name: 'browse' });
   expect(browseButton).toBeInTheDocument();
   await userEvent.click(browseButton);
 
   expect(openDialogMock).toHaveBeenCalled();
 
   expect(onChangeMock).toHaveBeenCalled();
+});
+
+test('Ensure there is a clear button for the input', async () => {
+  openDialogMock.mockResolvedValue([]);
+  const record: IConfigurationPropertyRecordedSchema = {
+    id: 'record',
+    title: 'record',
+    parentId: 'parent.record',
+    description: 'record-description',
+    type: 'string',
+    format: 'file',
+  };
+
+  render(FileItem, { record, value: '/abc/123' });
+  let inputField = screen.getByLabelText('record-description');
+  expect(inputField).toBeInTheDocument();
+  expect((inputField as HTMLInputElement).value).toBe('/abc/123');
+
+  const clear = screen.getByRole('button', { name: 'clear' });
+  expect(clear).toBeInTheDocument();
+  await userEvent.click(clear);
+
+  inputField = screen.getByLabelText('record-description');
+  expect(inputField).toBeInTheDocument();
+  expect((inputField as HTMLInputElement).value).toBe('');
 });

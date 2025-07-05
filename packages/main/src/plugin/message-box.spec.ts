@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (C) 2023 Red Hat, Inc.
+ * Copyright (C) 2023-2025 Red Hat, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@
 
 import { expect, test, vi } from 'vitest';
 
+import type { DropdownType } from '/@api/dialog.js';
+
 import type { ApiSenderType } from './api.js';
-import type { DropdownType } from './message-box.js';
 import { MessageBox } from './message-box.js';
 
 test('Should return first item if button clicked is the first', async () => {
@@ -50,6 +51,7 @@ test('Should return option one if dropdown clicked is the first', async () => {
   const dropdown: DropdownType = {
     heading: 'dropdown',
     buttons: ['Monday', 'Tuesday', 'Wednesday'],
+    type: 'dropdownButton',
   };
 
   const result = await messageBox.showDialog('info', 'title', 'message', [dropdown, 'ok']);
@@ -66,6 +68,7 @@ test('Should return option one if dropdown clicked is the second', async () => {
   const dropdown: DropdownType = {
     heading: 'dropdown',
     buttons: ['Monday', 'Tuesday', 'Wednesday'],
+    type: 'dropdownButton',
   };
 
   const result = await messageBox.showDialog('info', 'title', 'message', ['ok', dropdown]);

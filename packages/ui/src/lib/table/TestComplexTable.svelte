@@ -2,12 +2,7 @@
 import SimpleColumn from './SimpleColumn.svelte';
 import { Column, Row } from './table';
 import Table from './Table.svelte';
-
-interface Person {
-  name: string;
-  // do not allow children to have children
-  children: Array<Person & { children: [] }>;
-}
+import type { Person } from './test-table';
 
 interface Props {
   people: Array<Person>;

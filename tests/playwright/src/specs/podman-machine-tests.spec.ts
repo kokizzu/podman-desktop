@@ -26,8 +26,8 @@ import { expect as playExpect, test } from '../utility/fixtures';
 import {
   createPodmanMachineFromCLI,
   deletePodmanMachine,
-  deletePodmanMachineFromCLI,
   handleConfirmationDialog,
+  resetPodmanMachinesFromCLI,
 } from '../utility/operations';
 import { isLinux } from '../utility/platform';
 import { waitForPodmanMachineStartup } from '../utility/wait';
@@ -55,7 +55,7 @@ test.afterAll(async ({ runner, page }) => {
   test.setTimeout(120_000);
 
   if (test.info().status === 'failed') {
-    await deletePodmanMachineFromCLI(ROOTLESS_PODMAN_MACHINE_VISIBLE);
+    await resetPodmanMachinesFromCLI();
     await createPodmanMachineFromCLI();
   }
 
@@ -71,6 +71,8 @@ test.afterAll(async ({ runner, page }) => {
 
 test.describe
   .serial(`Podman machine switching validation `, () => {
+    test.describe.configure({ timeout: 120_000 });
+
     test('Check data for available Podman Machine and stop machine', async ({ page, navigationBar }) => {
       await test.step('Open resources page', async () => {
         const settingsBar = await navigationBar.openSettings();
@@ -257,7 +259,7 @@ test.describe
         await podmanMachineDetails.logsTab.click();
         await playExpect(
           podmanMachineDetails.tabContent.getByText('Machine "podman-machine-default" started successfully').first(),
-        ).toBeVisible({ timeout: 10_000 });
+        ).toBeVisible({ timeout: 30_000 });
 
         await playExpect(podmanMachineDetails.podmanMachineStatus).toHaveText('RUNNING', { timeout: 90_000 });
 

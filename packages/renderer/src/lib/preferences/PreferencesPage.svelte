@@ -3,8 +3,8 @@ import { onMount } from 'svelte';
 
 import ExperimentalPage from '/@/lib/preferences/ExperimentalPage.svelte';
 import PreferencesContainerConnectionEdit from '/@/lib/preferences/PreferencesContainerConnectionEdit.svelte';
+import type { IConfigurationPropertyRecordedSchema } from '/@api/configuration/models.js';
 
-import type { IConfigurationPropertyRecordedSchema } from '../../../../main/src/plugin/configuration-registry';
 import Route from '../../Route.svelte';
 import { configurationProperties } from '../../stores/configurationProperties';
 import Onboarding from '../onboarding/Onboarding.svelte';
@@ -49,7 +49,7 @@ onMount(async () => {
       empty
     {/if}
   </Route>
-  <Route path="/experimental" breadcrumb="Preferences">
+  <Route path="/experimental" breadcrumb="Experimental Features">
     <ExperimentalPage properties={properties}/>
   </Route>
   <Route path="/default/:key/*" breadcrumb="Preferences" let:meta>

@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (C) 2022, 2024 Red Hat, Inc.
+ * Copyright (C) 2022-2025 Red Hat, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import * as pathfs from 'node:path';
 
 import type * as containerDesktopAPI from '@podman-desktop/api';
 import * as chokidar from 'chokidar';
+import { injectable } from 'inversify';
 
 import { Emitter } from './events/emitter.js';
 import { Disposable } from './types/disposable.js';
@@ -32,7 +33,7 @@ export class FileSystemWatcherImpl implements containerDesktopAPI.FileSystemWatc
   constructor(path: string) {
     const parent = pathfs.dirname(path);
     if (fs.existsSync(parent)) {
-      this.doWatch(pathfs.join(fs.realpathSync(parent), pathfs.basename(path)));
+      this.doWatch(pathfs.join(fs.realpathSync(parent), pathfs.basename(path)), true);
     } else if (parent !== path) {
       // we stop the recursion at /
       const parentWatcher = new FileSystemWatcherImpl(parent);
@@ -40,6 +41,7 @@ export class FileSystemWatcherImpl implements containerDesktopAPI.FileSystemWatc
         this._onReady.fire();
         dispoReady.dispose();
       });
+
       const disposable = parentWatcher.onDidCreate((uri: containerDesktopAPI.Uri) => {
         if (uri.path === parent) {
           this.doWatch(pathfs.join(fs.realpathSync(parent), pathfs.basename(path)));
@@ -50,10 +52,11 @@ export class FileSystemWatcherImpl implements containerDesktopAPI.FileSystemWatc
     this._disposable = Disposable.from(this._onDidCreate, this._onDidChange, this._onDidDelete);
   }
 
-  doWatch(path: string): void {
+  doWatch(path: string, ignoreInitial: boolean = false): void {
     // needs to call chokidar
     this.watcher = chokidar.watch(path, {
       persistent: true,
+      ignoreInitial,
     });
 
     this.watcher.on('ready', () => {
@@ -104,6 +107,7 @@ export class FileSystemWatcherImpl implements containerDesktopAPI.FileSystemWatc
   }
 }
 
+@injectable()
 export class FilesystemMonitoring {
   createFileSystemWatcher(path: string): containerDesktopAPI.FileSystemWatcher {
     return new FileSystemWatcherImpl(path);

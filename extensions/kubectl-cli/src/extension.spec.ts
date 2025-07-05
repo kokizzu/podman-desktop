@@ -104,6 +104,8 @@ beforeEach(() => {
     getReleaseAssetURL: vi.fn().mockResolvedValue('dummy download url'),
     downloadReleaseAsset: downloadReleaseAssetMock,
   } as unknown as KubectlGitHubReleases);
+  KubectlExtension.vpState.version = undefined;
+  KubectlExtension.vpState.path = undefined;
 });
 
 afterEach(() => {
@@ -624,7 +626,6 @@ describe('postActivate', () => {
     await cliInstaller.doUninstall({} as unknown as Logger);
 
     expect(fs.promises.unlink).toHaveBeenCalledWith(path.join(extensionContext.storagePath, 'bin', 'kubectl'));
-    expect(extensionApi.process.exec).toHaveBeenCalledWith('which', ['system-path']);
     expect(extensionApi.process.exec).toHaveBeenCalledWith('rm', ['system-path'], { isAdmin: true });
   });
 

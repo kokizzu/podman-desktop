@@ -16,8 +16,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ***********************************************************************/
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import '@testing-library/jest-dom/vitest';
 
 import { fireEvent, render, screen } from '@testing-library/svelte';
@@ -27,8 +25,6 @@ import { beforeAll, describe, expect, test, vi } from 'vitest';
 import MessageBox from './MessageBox.svelte';
 import type { MessageBoxOptions } from './messagebox-input';
 
-const sendShowMessageBoxValuesMock = vi.fn();
-const sendShowMessageBoxOnSelect = vi.fn();
 const receiveFunctionMock = vi.fn();
 
 // mock some methods of the window object
@@ -36,8 +32,6 @@ beforeAll(() => {
   (window.events as unknown) = {
     receive: receiveFunctionMock,
   };
-  (window as any).sendShowMessageBoxValues = sendShowMessageBoxValuesMock;
-  (window as any).sendShowMessageBoxOnSelect = sendShowMessageBoxOnSelect;
 });
 
 describe('MessageBox', () => {
@@ -63,15 +57,15 @@ describe('MessageBox', () => {
 
     const title = await screen.findByText(messageBoxOptions.title);
     expect(title).toBeInTheDocument();
-    const message = await screen.findByText(messageBoxOptions.message);
-    expect(message).toBeInTheDocument();
+    const message = await screen.findAllByText(messageBoxOptions.message ?? '');
+    expect(message[1]).toBeInTheDocument();
     const detail = await screen.findByText(messageBoxOptions.detail ?? '');
     expect(detail).toBeInTheDocument();
     const footerMarkdownDescription = await screen.findAllByText(messageBoxOptions.footerMarkdownDescription ?? '');
     expect(footerMarkdownDescription[1]).toBeInTheDocument();
-    const button1 = await screen.findByText(messageBoxOptions.buttons?.[0] ?? '');
+    const button1 = await screen.findByText((messageBoxOptions.buttons?.[0] as string) ?? '');
     expect(button1).toBeInTheDocument();
-    const button2 = await screen.findByText(messageBoxOptions.buttons?.[1] ?? '');
+    const button2 = await screen.findByText((messageBoxOptions.buttons?.[1] as string) ?? '');
     expect(button2).toBeInTheDocument();
   });
 
@@ -95,7 +89,7 @@ describe('MessageBox', () => {
     const ok = await screen.findByText('OK');
     expect(ok).toBeInTheDocument();
     await fireEvent.click(ok);
-    expect(sendShowMessageBoxOnSelect).toBeCalledWith(idRequest, 0, undefined);
+    expect(window.sendShowMessageBoxOnSelect).toBeCalledWith(idRequest, 0, undefined);
   });
 
   test('Expect that Esc closes', async () => {
@@ -116,7 +110,7 @@ describe('MessageBox', () => {
     render(MessageBox, {});
 
     await userEvent.keyboard('{Escape}');
-    expect(sendShowMessageBoxOnSelect).toBeCalledWith(idRequest, undefined);
+    expect(window.sendShowMessageBoxOnSelect).toBeCalledWith(idRequest, undefined);
   });
 
   test('Expect that tabbing works', async () => {
@@ -190,7 +184,7 @@ describe('MessageBox', () => {
     const title1 = await screen.findByText(messageBoxOptions1.title);
     expect(title1).toBeInTheDocument();
     await fireEvent.click(ok1);
-    await vi.waitFor(() => expect(sendShowMessageBoxOnSelect).toBeCalledWith(idRequest1, 0, undefined));
+    await vi.waitFor(() => expect(window.sendShowMessageBoxOnSelect).toBeCalledWith(idRequest1, 0, undefined));
     eventCallback?.(messageBoxOptions2);
 
     const ok2 = await screen.findByText('OK');

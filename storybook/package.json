@@ -23,7 +23,7 @@
   "devDependencies": {
     "@storybook/addon-docs": "^9.1.1",
     "@storybook/addon-links": "^9.1.1",
-    "@storybook/addon-svelte-csf": "5.0.4",
+    "@storybook/addon-svelte-csf": "5.0.7",
     "@storybook/svelte-vite": "^9.1.1",
     "@sveltejs/package": "^2.4.1",
     "@sveltejs/vite-plugin-svelte": "6.1.1",

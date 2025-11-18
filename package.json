@@ -209,7 +209,7 @@
     "electron-util": "^1.0.0",
     "express": "^4.21.2",
     "getos": "^3.2.1",
-    "got": "^14.4.2",
+    "got": "^14.6.4",
     "hosted-git-info": "^9.0.2",
     "hpagent": "^1.2.0",
     "minimist": "^1.2.8",

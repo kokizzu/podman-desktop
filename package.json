@@ -189,7 +189,7 @@
     "typescript-eslint": "^8.50.0",
     "validator": "^13.15.23",
     "vite": "^7.3.0",
-    "vitest": "^4.0.10",
+    "vitest": "^4.0.15",
     "xvfb-maybe": "^0.2.1"
   },
   "dependencies": {

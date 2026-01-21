@@ -891,8 +891,8 @@ importers:
         specifier: ^10.1.11
         version: 10.1.11(react@18.2.0)(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))
       '@storybook/addon-svelte-csf':
-        specifier: 5.0.9
-        version: 5.0.9(@storybook/svelte@10.1.11(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))(svelte@5.47.1))(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.47.1)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.36.0)(tsx@4.21.0)(yaml@2.8.2)))(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))(svelte@5.47.1)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.36.0)(tsx@4.21.0)(yaml@2.8.2))
+        specifier: 5.0.10
+        version: 5.0.10(@storybook/svelte@10.1.11(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))(svelte@5.47.1))(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.47.1)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.36.0)(tsx@4.21.0)(yaml@2.8.2)))(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))(svelte@5.47.1)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.36.0)(tsx@4.21.0)(yaml@2.8.2))
       '@storybook/addon-themes':
         specifier: ^10.1.11
         version: 10.1.11(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))
@@ -3663,8 +3663,8 @@ packages:
       react:
         optional: true
 
-  '@storybook/addon-svelte-csf@5.0.9':
-    resolution: {integrity: sha512-bPY/rLbxt723ckY90gDVxgwrr1UEXnN27Zul5doef1zAlAtL4ZumaOpQ6q3+6Mj1ZJLFxyPt4L+e2FyEo25WQg==}
+  '@storybook/addon-svelte-csf@5.0.10':
+    resolution: {integrity: sha512-poSvTS7VdaQ42ZoqW5e4+2Hv1iLO0mekH9fwn/QuBNse48R4WlTyR8XFbHRTfatl9gdc9ZYC4uWzazrmV6zGIA==}
     peerDependencies:
       '@storybook/svelte': ^0.0.0-0 || ^8.2.0 || ^9.0.0 || ^9.1.0-0 || ^10.0.0-0
       '@sveltejs/vite-plugin-svelte': ^4.0.0 || ^5.0.0 || ^6.0.0
@@ -6260,8 +6260,8 @@ packages:
   dedent-js@1.0.1:
     resolution: {integrity: sha512-OUepMozQULMLUmhxS95Vudo0jb0UchLimi3+pQ2plj61Fcy8axbP9hbiD4Sz6DPqn6XG3kfmziVfQ1rSys5AJQ==}
 
-  dedent@1.7.0:
-    resolution: {integrity: sha512-HGFtf8yhuhGhqO07SV79tRp+br4MnbdjeVxotpn1QBl30pcLLCQjX5b2295ll0fv8RKDKsmWYrl05usHM9CewQ==}
+  dedent@1.7.1:
+    resolution: {integrity: sha512-9JmrhGZpOlEgOLdQgSm0zxFaYoQon408V1v49aqTWuXENVlnCuY9JBZcXZiCsZQWDjTm5Qf/nIvAy77mXDAjEg==}
     peerDependencies:
       babel-plugin-macros: ^3.1.0
     peerDependenciesMeta:
@@ -6647,8 +6647,8 @@ packages:
     resolution: {integrity: sha512-w+5mJ3GuFL+NjVtJlvydShqE1eN3h3PbI7/5LAsYJP/2qtuMXjfL2LpHSRqo4b4eSF5K/DH1JXKUAHSB2UW50g==}
     engines: {node: '>= 0.4'}
 
-  es-toolkit@1.39.10:
-    resolution: {integrity: sha512-E0iGnTtbDhkeczB0T+mxmoVlT4YNweEKBLq7oaU4p11mecdsZpNWOglI4895Vh4usbQ+LsJiuLuI2L0Vdmfm2w==}
+  es-toolkit@1.44.0:
+    resolution: {integrity: sha512-6penXeZalaV88MM3cGkFZZfOoLGWshWWfdy0tWw/RlVVyhvMaWSBTOvXNeiW3e5FwdS5ePW0LGEu17zT139ktg==}
 
   es6-error@4.1.1:
     resolution: {integrity: sha512-Um/+FxMr9CISWh0bi5Zv0iOD+4cFh5qLeks1qhAopKVAJw3drgKbKySikp7wGhDL0HPeaja0P5ULZrxLkniUVg==}
@@ -8510,9 +8510,6 @@ packages:
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
-
-  magic-string@0.30.19:
-    resolution: {integrity: sha512-2N21sPY9Ws53PZvsEpVtNuSW+ScYbQdp4b9qUaL+9QkHUrGFKo56Lg9Emg5s9V/qrtNBmiR01sYhUOwu3H+VOw==}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -11031,6 +11028,10 @@ packages:
     resolution: {integrity: sha512-AN04xbWGrSTDmVwlI4/GTlIIwMFk/XEv7uL8aa57zuvRy6s4hdBed+lVq2fAZ89XDa7Us3ANXcE3Tvqvja1kTA==}
     engines: {node: '>=18'}
     deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
+
+  tar@7.5.5:
+    resolution: {integrity: sha512-ocjwSUBo2V8ExKxy9FH6iROIsK60OCW//h14MFYpivNSYIj7ntgm35ijGT82Jl//xwbxBhIYXkfAovjtVm9nrA==}
+    engines: {node: '>=18'}
 
   temp-file@3.4.0:
     resolution: {integrity: sha512-C5tjlC/HCtVUOi3KWVokd4vHVViOmGjtLwIh4MuzPo/nMYTV/p1urt3RnMz2IWXDdKEGJH3k5+KPxtqRsUYGtg==}
@@ -14324,7 +14325,7 @@ snapshots:
       nopt: 6.0.0
       proc-log: 2.0.1
       semver: 7.7.3
-      tar: 7.5.4
+      tar: 7.5.5
       which: 2.0.2
     transitivePeerDependencies:
       - bluebird
@@ -14363,7 +14364,7 @@ snapshots:
       ora: 5.4.1
       read-binary-file-arch: 1.0.6
       semver: 7.7.3
-      tar: 7.5.4
+      tar: 7.5.5
       yargs: 17.7.2
     transitivePeerDependencies:
       - bluebird
@@ -15556,15 +15557,15 @@ snapshots:
     optionalDependencies:
       react: 18.2.0
 
-  '@storybook/addon-svelte-csf@5.0.9(@storybook/svelte@10.1.11(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))(svelte@5.47.1))(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.47.1)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.36.0)(tsx@4.21.0)(yaml@2.8.2)))(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))(svelte@5.47.1)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.36.0)(tsx@4.21.0)(yaml@2.8.2))':
+  '@storybook/addon-svelte-csf@5.0.10(@storybook/svelte@10.1.11(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))(svelte@5.47.1))(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.47.1)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.36.0)(tsx@4.21.0)(yaml@2.8.2)))(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))(svelte@5.47.1)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.36.0)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@storybook/csf': 0.1.13
       '@storybook/svelte': 10.1.11(storybook@10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0))(svelte@5.47.1)
       '@sveltejs/vite-plugin-svelte': 6.2.4(svelte@5.47.1)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.36.0)(tsx@4.21.0)(yaml@2.8.2))
-      dedent: 1.7.0
-      es-toolkit: 1.39.10
+      dedent: 1.7.1
+      es-toolkit: 1.44.0
       esrap: 1.4.9
-      magic-string: 0.30.19
+      magic-string: 0.30.21
       storybook: 10.1.11(@testing-library/dom@10.4.1)(prettier@3.8.0)(react-dom@18.3.1(react@18.2.0))(react@18.2.0)
       svelte: 5.47.1
       svelte-ast-print: 0.4.2(svelte@5.47.1)
@@ -17104,7 +17105,7 @@ snapshots:
       resedit: 1.7.2
       sanitize-filename: 1.6.3
       semver: 7.7.3
-      tar: 7.5.4
+      tar: 7.5.5
       temp-file: 3.4.0
     transitivePeerDependencies:
       - bluebird
@@ -17649,7 +17650,7 @@ snapshots:
       promise-inflight: 1.0.1
       rimraf: 3.0.2
       ssri: 9.0.1
-      tar: 7.5.4
+      tar: 7.5.5
       unique-filename: 2.0.1
     transitivePeerDependencies:
       - bluebird
@@ -18629,7 +18630,7 @@ snapshots:
 
   dedent-js@1.0.1: {}
 
-  dedent@1.7.0: {}
+  dedent@1.7.1: {}
 
   deep-eql@5.0.2: {}
 
@@ -19126,7 +19127,7 @@ snapshots:
       is-date-object: 1.1.0
       is-symbol: 1.1.1
 
-  es-toolkit@1.39.10: {}
+  es-toolkit@1.44.0: {}
 
   es6-error@4.1.1:
     optional: true
@@ -21184,10 +21185,6 @@ snapshots:
 
   lz-string@1.5.0: {}
 
-  magic-string@0.30.19:
-    dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
-
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -22140,7 +22137,7 @@ snapshots:
       npmlog: 6.0.2
       rimraf: 3.0.2
       semver: 7.7.3
-      tar: 7.5.4
+      tar: 7.5.5
       which: 2.0.2
     transitivePeerDependencies:
       - bluebird
@@ -24421,6 +24418,14 @@ snapshots:
       streamx: 2.22.0
 
   tar@7.5.4:
+    dependencies:
+      '@isaacs/fs-minipass': 4.0.1
+      chownr: 3.0.0
+      minipass: 7.1.2
+      minizlib: 3.1.0
+      yallist: 5.0.0
+
+  tar@7.5.5:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0

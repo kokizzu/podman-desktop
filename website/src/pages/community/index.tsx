@@ -3,6 +3,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { faBluesky, faDiscord, faGithub, faLinkedin, faMastodon, faXTwitter } from '@fortawesome/free-brands-svg-icons';
 import { faCalendar, faClock } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import AdoptersCard from '@site/src/components/AdoptersCard';
 import CommunityBanner from '@site/src/components/CommunityBanner';
 import CommunityVideoCard from '@site/src/components/CommunityVideoCard';
 import GradientButton from '@site/src/components/GradientButton';
@@ -42,6 +43,25 @@ export default function Home(): JSX.Element {
       thumbnail: '/img/video4.png',
       alt: 'rag-app',
       caption: 'How to develop a RAG application using Podman Desktop',
+    },
+  ];
+
+  const adoptersLogos = [
+    {
+      id: 'amadeus-logo',
+      logo: '/img/adopters/amadeus_logo_light.svg',
+      logoDark: '/img/adopters/amadeus_logo_dark.svg',
+      alt: 'amadeus',
+      width: '167px',
+      height: '68px',
+    },
+
+    {
+      id: 'eost-logo',
+      logo: '/img/adopters/eost.png',
+      alt: 'eost',
+      width: '83px',
+      height: '83px',
     },
   ];
 
@@ -239,6 +259,31 @@ export default function Home(): JSX.Element {
           <div className="flex justify-center ">
             <GradientButton href="https://www.youtube.com/playlist?list=PLwQSOOPzuslqqUIaVWGKzO4yd37Qbt2I0">
               See More Content
+            </GradientButton>
+          </div>
+        </section>
+      </div>
+
+      <div className="max-w-4xl mx-auto p-6 text-center text-base">
+        <section id="adopters" className="pb-8 pt-8  mb-6">
+          <h2 className="text-3xl font-bold mb-6">Adopters</h2>
+          <p className="mb-14">Organizations and companies using Podman Desktop in production.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 mb-6 text-black dark:text-white justify-items-center">
+            {adoptersLogos.map(logo => (
+              <AdoptersCard
+                key={logo.id}
+                logo={logo.logo}
+                logoDark={logo.logoDark}
+                alt={logo.alt}
+                width={logo.width}
+                height={logo.height}
+              />
+            ))}
+          </div>
+          <div className="flex justify-center">
+            <GradientButton href="https://github.com/podman-desktop/podman-desktop/blob/main/ADOPTERS.md">
+              <FontAwesomeIcon icon={faGithub} size="1x" className="mr-2" />
+              View all Adopters
             </GradientButton>
           </div>
         </section>

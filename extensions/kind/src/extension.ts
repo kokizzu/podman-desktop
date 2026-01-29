@@ -140,11 +140,20 @@ function updateKubernetesFactoryRegistration(
 
   if (runningConnections.length > 0) {
     kubernetesFactoryDisposable ??= registerKubernetesFactory(provider, telemetryLogger);
+    provider.updateWarnings([]);
   } else {
     if (kubernetesFactoryDisposable) {
       kubernetesFactoryDisposable.dispose();
       kubernetesFactoryDisposable = undefined;
     }
+    provider.updateWarnings([
+      {
+        name: 'Container Engine Required',
+        details: extensionApi.env.isLinux
+          ? 'Install and start a container engine (e.g. Podman) to create Kind clusters'
+          : 'Start your container provider (e.g. Podman) to create Kind clusters',
+      },
+    ]);
   }
 }
 

@@ -608,8 +608,8 @@ importers:
         specifier: ^7.7.4
         version: 7.7.4
       stream-json:
-        specifier: ^1.9.1
-        version: 1.9.1
+        specifier: ^2.0.0
+        version: 2.0.0
       tar:
         specifier: ^7.5.3
         version: 7.5.12
@@ -10806,11 +10806,11 @@ packages:
     resolution: {integrity: sha512-pqMqwQCso0PBJt2PQmDO0cFj0lyqmiwOMiMSkVtRokl7e+ZTRYgDHKnuZNbqjiJXgsg4nuqtD/zxuo9KqTp0Yw==}
     engines: {node: '>= 0.10.0'}
 
-  stream-chain@2.2.5:
-    resolution: {integrity: sha512-1TJmBx6aSWqZ4tx7aTpBDXK0/e2hhcNSTV8+CbFJtDjbb+I1mZ8lHit0Grw9GRT+6JbIrrDd8esncgBi8aBXGA==}
+  stream-chain@3.5.0:
+    resolution: {integrity: sha512-elTg2p2f4un0SRPM6oMfr6Rm8sRLx8x7+HhVOJO/p6ukb5TxXsKD49WiDRLXCyKioM7ZVL+xTblKKAAE5igo1A==}
 
-  stream-json@1.9.1:
-    resolution: {integrity: sha512-uWkjJ+2Nt/LO9Z/JyKZbMusL8Dkh97uUBTv3AJQ74y07lVahLY4eEFsPsE97pxYBwr8nnjMAIch5eqI0gPShyw==}
+  stream-json@2.0.0:
+    resolution: {integrity: sha512-Yvp7K6a1A0dsEnM1CvbdanKaEdTMwF31H6dxjvHpBz7/FbwH4SBQWUGzk6x/tTvBTBxz0w3Xsel8KRndFaoEJA==}
 
   streamx@2.23.0:
     resolution: {integrity: sha512-kn+e44esVfn2Fa/O0CPFcex27fjIL6MkVae0Mm6q+E6f0hWv578YCERbv+4m02cjxvDsPKLnmxral/rR6lBMAg==}
@@ -24204,11 +24204,11 @@ snapshots:
 
   stream-buffers@3.0.3: {}
 
-  stream-chain@2.2.5: {}
+  stream-chain@3.5.0: {}
 
-  stream-json@1.9.1:
+  stream-json@2.0.0:
     dependencies:
-      stream-chain: 2.2.5
+      stream-chain: 3.5.0
 
   streamx@2.23.0:
     dependencies:
